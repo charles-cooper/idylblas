@@ -5,3 +5,10 @@ Pure Java BLAS Implementation by Idylwood Technologies
 
 IdylBLAS is a pure 100% Java implementation of the BLAS API intended to give numerically accurate, native-like linear algebra performance within the JVM.
 
+Having a fast BLAS implementation on the JVM is important for several reasons
+  1) Users do not have to download or compile architecture specific code
+  2) Performing large array / matrix calculations does not incur the cost of leaving the JVM (in particular with JNI code the data will usually have to be copied outside the JVM)
+  3) Developers are free to utilize the faster development time which comes with JVM languages and thus can optimize the programmer / code productivity tradeoff.
+
+IdylBLAS is intended to be a drop in replacement for other Java BLAS libraries such as the Colt, OpenGamma and jblas which it achieves by implementing the BLAS interfaces in those libraries.
+
