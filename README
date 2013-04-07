@@ -12,3 +12,7 @@ Having a fast BLAS implementation on the JVM is important for several reasons
 
 IdylBLAS is intended to be a drop in replacement for other Java BLAS libraries such as the Colt, OpenGamma and jblas which it achieves by implementing the BLAS interfaces in those libraries.
 
+Benchmarks:
+  todo
+
+IdylBLAS is distributed under the lenient Apache 2.0 license.
