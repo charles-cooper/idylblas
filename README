@@ -3,5 +3,5 @@ idylblas
 
 Pure Java BLAS Implementation by Idylwood Technologies
 
-IdylBLAS is a pure 100% Java implementation of the BLAS API intended to give native-like linear algebra performance within the JVM, which is desirable for a number of reasons. It is also designed with numerical stability in mind, which competing libraries are not.
+IdylBLAS is a pure 100% Java implementation of the BLAS API intended to give numerically accurate, native-like linear algebra performance within the JVM.
 
