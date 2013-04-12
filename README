@@ -3,13 +3,14 @@ idylblas
 
 Pure Java BLAS Implementation by Idylwood Technologies
 
-IdylBLAS is a fast, portable, numerically precise pure 100% Java BLAS implementation. It is intended to provide native-like linear algebra performance on the JVM which produces output which is architecture independent.
+IdylBLAS is a BLAS implementation which is intended to provide native-like linear algebra performance on the JVM which produces output which is architecture independent.
 
-Having a fast, portable, numerically precise BLAS implementation on the JVM is important for several reasons
-  1) Users do not have to download or compile architecture specific, native code
-  2) Performing large array / matrix calculations does not incur the cost of leaving the JVM (in particular with JNI code the data will usually have to be copied outside the JVM)
-  3) Developers are free to utilize the faster development time which comes with JVM languages and thus can optimize the programmer / code productivity tradeoff.
-  4) Computations can be carried out on different architectures without worrying about incompatibility of results.
+IdylBLAS is
+  1) Fast. Performance is faster than any known Java implementation and is competitive with native BLAS implementations.
+  2) Numerically precise / portable. Computations are intended to be numerically precise, so computations can be carried out on different architectures without worrying about incompatibility of results (which is important, for example, in parallel programming).
+  3) Lightweight. Fewer lines of code means that there are fewer chances for bugs and the class files will fit more comfortably in cache.
+  4) Self-contained. No external dependencies, so you don't have to download a dozen JARs to make it compile (IdylBLAS does explicitly fork files -- mostly interfaces and abstract classes -- from existing libraries for the purpose of providing drop-in replacement functionality).
+  5) 100% pure Java implementation. This means that users don't have to download or compile architecture specific code (besides the JRE), and the JNI is not used to performing large array / matrix calculations does not incur the cost of copying memory outside the JVM.
 
 IdylBLAS is intended to be a drop in replacement for other Java BLAS libraries such as the Colt, OpenGamma and jblas which it achieves by implementing the BLAS interfaces in those libraries.
 
