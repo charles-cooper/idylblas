@@ -30,6 +30,8 @@ import java.math.MathContext;
 import java.util.Arrays;
 import java.util.Random;
 
+import com.idylwood.matrix.DoubleMatrix2D;
+
 // This class contains a bunch of numerical methods which are intended to be fast and precise.
 // Several of the methods come in 'fast', 'normal' and 'slow' versions to give the end user
 // more control over the trade-off between accuracy and speed.
@@ -660,6 +662,7 @@ public final class MathUtils {
 		return Math.sqrt(normSquared(x));
 	}
 
+	/*
 	public static class Matrix {
 		private final double[] data;
 		private final int rows;
@@ -721,12 +724,13 @@ public final class MathUtils {
 			return copyOfRange(data,row*cols,(row+1)*cols);
 		}
 	}
+	*/
 
-	public static final Matrix matrixMultiply(final Matrix first, final Matrix second)
+	public static final DoubleMatrix2D matrixMultiply(final DoubleMatrix2D first, final DoubleMatrix2D second)
 	{
 		if (first.cols()!=second.rows())
 			throw new ArrayIndexOutOfBoundsException("Trying to multiply matrices of different dimensions?!");
-		final Matrix ret = new Matrix(first.rows(), second.cols());
+		final DoubleMatrix2D ret = new DoubleMatrix2D(first.rows(), second.cols());
 		for (int i = 0; i < second.cols(); i++)
 		{
 			// extract the column beforehand to improve cache hits
@@ -741,11 +745,11 @@ public final class MathUtils {
 		return ret;
 	}
 
-	public static final Matrix matrixMultiplyFast(final Matrix first, final Matrix second)
+	public static final DoubleMatrix2D matrixMultiplyFast(final DoubleMatrix2D first, final DoubleMatrix2D second)
 	{
 		if (first.cols()!=second.rows())
 			throw new ArrayIndexOutOfBoundsException("Trying to multiply matrices of different dimensions?!");
-		final Matrix ret = new Matrix(first.rows(), second.cols());
+		final DoubleMatrix2D ret = new DoubleMatrix2D(first.rows(), second.cols());
 		for (int i = 0; i < second.cols(); i++)
 		{
 			// extract the column beforehand to improve cache hits
@@ -873,7 +877,7 @@ public final class MathUtils {
 		return ret;
 	}
 
-	public static final double[] matrixMultiplyFast(final Matrix matrix, final double[] vector)
+	public static final double[] matrixMultiplyFast(final DoubleMatrix2D matrix, final double[] vector)
 	{
 		final double []ret = new double[matrix.rows()];
 		for (int i = 0; i < matrix.rows(); i++)
@@ -883,7 +887,7 @@ public final class MathUtils {
 		return ret;
 	}
 
-	public static final double[] matrixMultiply(final Matrix matrix, final double[] vector)
+	public static final double[] matrixMultiply(final DoubleMatrix2D matrix, final double[] vector)
 	{
 		final double ret[] = new double[matrix.rows()];
 		for (int i = 0; i < matrix.rows(); i++)
