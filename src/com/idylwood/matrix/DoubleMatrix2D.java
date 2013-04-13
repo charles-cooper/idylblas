@@ -26,6 +26,8 @@
 
 package com.idylwood.matrix;
 
+import com.idylwood.utils.MathUtils;
+
 public class DoubleMatrix2D
 {
 	private final double[] data;
@@ -41,17 +43,29 @@ public class DoubleMatrix2D
 			System.arraycopy(data[i], 0, this.data, i*cols, cols);
 		}
 	}
-	public int rows() { return this.rows; }
-	public double[] data() { return this.data; }
-	public int cols() { return this.cols; }
-
 	public DoubleMatrix2D(final int rows, final int cols)
 	{
 		this.rows = rows;
 		this.cols = cols;
 		this.data = new double[rows*cols];
 	}
+	// square matrix construction. does not copy the array.
+	private DoubleMatrix2D(final double data[], final int rows, final int cols)
+	{
+		this.rows = rows; this.cols = cols;
+		if (this.rows*this.cols != data.length)
+			throw new RuntimeException("Matrix must be square!");
+		this.data = data;
+	}
 
+	public int rows() { return this.rows; }
+	public double[] data() { return this.data; }
+	public int cols() { return this.cols; }
+	public static DoubleMatrix2D random(final int rows, final int cols)
+	{
+		final double[] data = MathUtils.random(rows*cols);
+		return new DoubleMatrix2D(data,rows,cols);
+	}
 	public int index(final int row, final int col)
 	{
 		return row * cols + col;
@@ -77,9 +91,33 @@ public class DoubleMatrix2D
 		}
 		return ret;
 	}
+	public DoubleMatrix2D plus(final DoubleMatrix2D other)
+	{
+		return add(this,other);
+	}
+	public DoubleMatrix2D minus(final DoubleMatrix2D other)
+	{
+		return subtract(this,other);
+	}
+	public static DoubleMatrix2D add(final DoubleMatrix2D one, final DoubleMatrix2D two)
+	{
+		if (one.cols()!=two.cols() || one.rows()!=two.rows())
+			throw new RuntimeException("uh oh");
+		final double[] data = MathUtils.add(one.data(),two.data());
+		final DoubleMatrix2D ret = new DoubleMatrix2D(data,one.rows(),one.cols());
+		return ret;
+	}
+	public static DoubleMatrix2D subtract(final DoubleMatrix2D minuend, final DoubleMatrix2D subtrahend)
+	{
+		if (minuend.cols()!=subtrahend.cols() || minuend.rows()!=subtrahend.rows())
+			throw new RuntimeException("uh oh");
+		final double[] data = MathUtils.subtract(minuend.data(),subtrahend.data());
+		final DoubleMatrix2D ret = new DoubleMatrix2D(data,minuend.rows(),minuend.cols());
+		return ret;
+	}
 	public double[] extractRow(int row)
 	{
-		return com.idylwood.utils.MathUtils.copyOfRange(data,row*cols,(row+1)*cols);
+		return MathUtils.copyOfRange(data,row*cols,(row+1)*cols);
 	}
 }
 

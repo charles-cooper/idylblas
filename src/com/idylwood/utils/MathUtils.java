@@ -234,7 +234,7 @@ public final class MathUtils {
 	{
 		final int len = Math.min(first.length,second.length);
 		final double ret[] = new double[len];
-		for (int i = len; i-- != 0;)
+		for (int i = 0; i < len; i++)
 			ret[i] = first[i] - second[i];
 		return ret;
 	}
@@ -243,7 +243,7 @@ public final class MathUtils {
 	{
 		final int len = Math.min(first.length,second.length);
 		final double ret[] = new double[len];
-		for (int i = len; i--!=0;)
+		for (int i = 0; i < len; i++)
 			ret[i] = first[i]+second[i];
 		return ret;
 	}
@@ -389,7 +389,7 @@ public final class MathUtils {
 	static void logTime(String msg)
 	{
 		final long new_time = System.currentTimeMillis();
-		System.out.println(msg);
+		System.out.println(msg+" "+(new_time-time));
 		MathUtils.time = new_time;
 	}
 
@@ -464,7 +464,7 @@ public final class MathUtils {
 	}
 	public static final int abs(final int i)
 	{
-		final int sign = i>>>63;
+		final int sign = i>>>31;
 		return (i^(~sign+1)) + sign;
 	}
 
@@ -725,6 +725,93 @@ public final class MathUtils {
 		}
 	}
 	*/
+
+	// implementation of Strassen's algorithm.
+	private static final DoubleMatrix2D matrixMultiplyStrassen(final DoubleMatrix2D first, final DoubleMatrix2D second)
+	{
+		return strassen(first,second);
+	}
+	private static final DoubleMatrix2D strassen(final DoubleMatrix2D first, final DoubleMatrix2D second)
+	{
+		final int n = first.rows();
+		if (first.rows()!=first.cols())
+			return null;
+		if (second.rows()!= first.rows() || second.cols()!=second.rows())
+			return null;
+		if (!isPowerOfTwo(first.rows()))
+			return null;
+		final DoubleMatrix2D ret = new DoubleMatrix2D(first.rows(),first.rows());
+		if (1==n) // 1x1
+		{
+			ret.set(0,0,first.get(0,0)*second.get(0,0));
+			return ret;
+		}
+		final DoubleMatrix2D r,s,t,u, a,b,c,d,e,f,g,h, P1,P2,P3,P4,P5,P6,P7;
+		final int m = n>>1;
+		//r = new DoubleMatrix2D(m,m); s = new DoubleMatrix2D(m,m);
+		//t = new DoubleMatrix2D(m,m); u = new DoubleMatrix2D(m,m);
+		a = new DoubleMatrix2D(m,m); b = new DoubleMatrix2D(m,m);
+		c = new DoubleMatrix2D(m,m); d = new DoubleMatrix2D(m,m);
+		e = new DoubleMatrix2D(m,m); f = new DoubleMatrix2D(m,m);
+		g = new DoubleMatrix2D(m,m); h = new DoubleMatrix2D(m,m);
+		//P1 = new DoubleMatrix2D(m,m); P2 = new DoubleMatrix2D(m,m);
+		//P3 = new DoubleMatrix2D(m,m); P4 = new DoubleMatrix2D(m,m);
+		//P5 = new DoubleMatrix2D(m,m); P6 = new DoubleMatrix2D(m,m);
+		//P7 = new DoubleMatrix2D(m,m);
+		// copy in the four quadrants
+		copy_one(a,first,0,0);
+		copy_one(b,first,0,m);
+		copy_one(c,first,m,0);
+		copy_one(d,first,m,m);
+		copy_one(e,second,0,0);
+		copy_one(f,second,0,m);
+		copy_one(g,second,m,0);
+		copy_one(h,second,m,m);
+		P1 = strassen(a, f.minus(h));
+		P2 = strassen(a.plus(b), h);
+		P3 = strassen(c.plus(d), e);
+		P4 = strassen(d, g.minus(e));
+		P5 = strassen(a.plus(d), e.plus(h));
+		P6 = strassen(b.plus(d), g.plus(h));
+		P7 = strassen(a.minus(c), e.plus(f));
+
+		r = P5.plus(P4).minus(P2.minus(P6));
+		s = P1.plus(P2);
+		t = P3.plus(P4);
+		u = P5.plus(P1).minus(P3.plus(P7));
+		return strassen_answer(r,s,t,u);
+	}
+	private static final DoubleMatrix2D strassen_answer(final DoubleMatrix2D r, final DoubleMatrix2D s, final DoubleMatrix2D t, final DoubleMatrix2D u)
+	{
+		final int m = r.rows();
+		final int n = m*2;
+		final DoubleMatrix2D ret = new DoubleMatrix2D(n,n);
+		copy_two(ret,r,0,0);
+		copy_two(ret,s,0,m);
+		copy_two(ret,t,m,0);
+		copy_two(ret,u,m,m);
+		return ret;
+	}
+	private static final void copy_two(final DoubleMatrix2D dest, final DoubleMatrix2D src, final int dest_i, final int dest_j)
+	{
+		for (int i = 0; i < src.rows(); i++)
+			for (int j = 0; j < src.rows(); j++)
+				dest.set(dest_i+i,dest_j+j,src.get(i,j));
+	}
+
+	// assumes rows==cols
+	private static final void copy_one(final DoubleMatrix2D dest, final DoubleMatrix2D src, final int src_i, final int src_j)
+	{
+		if (dest.rows()!=dest.cols()) throw new RuntimeException("bad dest");
+		for (int i = 0; i < dest.rows(); i++)
+			for (int j = 0; j < dest.rows(); j++)
+				dest.set(i,j,src.get(src_i+i,src_j+j));
+	}
+
+	static final boolean isPowerOfTwo(final int i)
+	{
+		return (i & (~i + 1)) == i;
+	}
 
 	public static final DoubleMatrix2D matrixMultiply(final DoubleMatrix2D first, final DoubleMatrix2D second)
 	{
@@ -1040,7 +1127,17 @@ public final class MathUtils {
 	{
 
 		logTime("start");
-		final int len = 1000*1000*10;
+		final int len = 1024;
+		final DoubleMatrix2D one = DoubleMatrix2D.random(len,len);
+		final DoubleMatrix2D two = DoubleMatrix2D.random(len,len);
+		strassen(one,two);
+		logTime("Warmed up");
+		strassen(one,two);
+		logTime("done");
+
+		if (true) return;
+		logTime("start");
+		//final int len = 1000*1000*10;
 		final double[] data = shift(random(len),-.5);
 		logTime("random");
 		double fast,medium,slow;
