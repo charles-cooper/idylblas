@@ -663,7 +663,8 @@ public final class MathUtils {
 	}
 
 	// implementation of Strassen's algorithm.
-	public static final DoubleMatrix2D matrixMultiplyStrassen(final DoubleMatrix2D first, final DoubleMatrix2D second)
+	// not optimized / debugged yet.
+	private static final DoubleMatrix2D matrixMultiplyStrassen(final DoubleMatrix2D first, final DoubleMatrix2D second)
 	{
 		if (first.rows()!=first.cols())
 			return null;
@@ -672,16 +673,17 @@ public final class MathUtils {
 		if (!isPowerOfTwo(first.rows()))
 			return null;
 		final DoubleMatrix2D ret = new DoubleMatrix2D(first.rows(),first.rows());
-		strassen(first,second, ret, 0,0, 0,0, 0,0, first.rows());//, first.rows());
+		strassen(first,second, ret, 0,0,0, first.rows());//, first.rows());
 		return ret;
 	}
-	private static final void strassen(final DoubleMatrix2D first, final DoubleMatrix2D second, final DoubleMatrix2D ret, final int first_i, final int first_j, final int second_i, final int second_j, final int ret_i, final int ret_j, final int n)
+	private static final void strassen(final DoubleMatrix2D first, final DoubleMatrix2D second, final DoubleMatrix2D ret, final int first_idx, final int second_idx, final int ret_idx, final int n)
 	{
 		// TODO move these checks elsewhere
 		//final DoubleMatrix2D ret = new DoubleMatrix2D(n,n);
 		if (1==n) // 1x1
 		{
-			ret.set(ret_i,ret_j,first.get(first_i,first_j)*second.get(second_i,second_j));
+			ret.set(0,0,first.get(0,0)*second.get(0,0));
+			//ret.data()[ret_idx] = first.data()[first_idx] * second.data()[second_idx];
 			return;
 		}
 		// TODO case 2==n
@@ -689,25 +691,42 @@ public final class MathUtils {
 		// see wikipedia for explanation of variable names
 		final DoubleMatrix2D c11,c12,c21,c22, a11,a12,a21,a22,b11,b12,b21,b22, m1,m2,m3,m4,m5,m6,m7;
 		final int m = n/2;
-		//r = new DoubleMatrix2D(m,m); s = new DoubleMatrix2D(m,m);
-		//t = new DoubleMatrix2D(m,m); u = new DoubleMatrix2D(m,m);
-		// copy in the four quadrants
-		/*
-		*/
-		if (m > 256)
-		//if (true)
+		if (m > 256) // otherwise strassen is faster
+		//if (false)
+//		if (true)
 		{
 			m1 = new DoubleMatrix2D(m,m); m2 = new DoubleMatrix2D(m,m);
 			m3 = new DoubleMatrix2D(m,m); m4 = new DoubleMatrix2D(m,m);
 			m5 = new DoubleMatrix2D(m,m); m6 = new DoubleMatrix2D(m,m);
 			m7 = new DoubleMatrix2D(m,m);
-			strassen(first.plus(first, 0,0, m,m, m,m),second.plus(second, 0,0, m,m, m,m), m1, 0,0, 0,0, 0,0, m); // (a11+a22)(b11+b22)
-			strassen(first.plus(first,0,m, 0,0, m,m), second, m2, 0,0, 0,0, 0,0, m); // (a21+a22)b11
-			strassen(first ,second.minus(second, 0,m, m,m, m,m), m3, 0,0, 0,0, 0,0, m); // a11(b12-b22)
-			strassen(first, second.minus(second, m,0, 0,0, m,m), m4, m,m, 0,0, 0,0, m); // a22(b21-b11)
-			strassen(first.plus(first,0,0, 0,m, m,m), second, m5, 0,0, m,m, 0,0, m); // (a11+a12)b22
-			strassen(first.minus(first, m,0, 0,0, m,m), second.plus(second,0,0, 0,m, m,m), m6, 0,0, 0,0, 0,0, m); // (a21-a11)(b11+b12)
-			strassen(first.minus(first, 0,m, m,m, m,m), second.plus(second, m,0, m,m, m,m), m7, 0,0, 0,0, 0,0, m); // (a12-a22)(b21+b22)
+			// m1 = (a11+a22)(b11+b22)
+			strassen(first.submatrix(0,0,m,m).plus(first.submatrix(m,m,m,m)),
+					second.submatrix(0,0,m,m).plus(second.submatrix(m,m,m,m)),
+					m1, 0,0,0, m);
+			// m2 = (a21+a22)b11
+			strassen(first.submatrix(m,0,m,m).plus(first.submatrix(m,m,m,m)),
+					second.submatrix(0,0,m,m),
+					m2, 0,0,0, m);
+			// m3 = a11(b12-b22)
+			strassen(first.submatrix(0,0,m,m),
+					second.submatrix(0,m,m,m).minus(second.submatrix(m,m,m,m)),
+					m3, 0,0,0, m);
+			// m4 = a22(b21-b11)
+			strassen(first.submatrix(m,m,m,m),
+					second.submatrix(m,0,m,m).minus(second.submatrix(0,0,m,m)),
+					m4, 0,0,0, m);
+			// m5 = (a11+a12)b22
+			strassen(first.submatrix(0,0,m,m).plus(first.submatrix(0,m,m,m)),
+					second.submatrix(m,m,m,m),
+					m5,0,0,0,m);
+			// m6 = (a21-a11)(b11+b12)
+			strassen(first.submatrix(m,0,m,m).minus(first.submatrix(0,0,m,m)),
+					second.submatrix(0,0,m,m).plus(second.submatrix(0,m,m,m)),
+					m6,0,0,0,m);
+			// m7 = (a12-a22)(b21+b22)
+			strassen(first.submatrix(0,m,m,m).minus(first.submatrix(m,m,m,m)),
+					second.submatrix(m,0,m,m).plus(second.submatrix(m,m,m,m)),
+					m7,0,0,0,m);
 		}
 		else
 		{
@@ -715,6 +734,7 @@ public final class MathUtils {
 			a21 = new DoubleMatrix2D(m,m); a22 = new DoubleMatrix2D(m,m);
 			b11 = new DoubleMatrix2D(m,m); b12 = new DoubleMatrix2D(m,m);
 			b21 = new DoubleMatrix2D(m,m); b22 = new DoubleMatrix2D(m,m);
+			// TODO change copy_one to set.
 			copy_one(a11,first,0,0);
 			copy_one(a12,first,0,m);
 			copy_one(a21,first,m,0);
@@ -733,38 +753,34 @@ public final class MathUtils {
 		}
 
 		int idx = 0;
-		int ret_idx = ret.index(ret_i, ret_j);
-		for (int i = 0; i < m; i++)
+		int ret_idx_cpy = ret_idx;
+		for (int i = 0; i < m; i++,ret_idx_cpy+=n)
 		{
-			for (int j = 0; j < m; j++,idx++,ret_idx++)
+			for (int j = 0; j < m; j++,idx++,ret_idx_cpy++)
 			{
-				ret.data()[ret_idx] = m1.data()[idx] + m4.data()[idx] - m5.data()[idx] + m7.data()[idx]; // C11
-				ret.data()[ret_idx+m] = m3.data()[idx] + m5.data()[idx]; // C12
-				ret.data()[ret_idx+m*m] = m2.data()[idx] + m4.data()[idx]; // C21
-				ret.data()[ret_idx+m*m + m] = m1.data()[idx] - m2.data()[idx] + m3.data()[idx] + m6.data()[idx]; // C22
+				// fracking pointer arithmetic
+				final int idx2 = ret_idx + j + i*n;
+				final int idx11 = idx2;
+				final int idx12 = idx2 + m;
+				final int idx21 = idx2 + m*n;
+				final int idx22 = idx2 + m*n + m;
+				ret.data()[idx11] = m1.data()[idx] + m4.data()[idx] - m5.data()[idx] + m7.data()[idx]; // C11
+				ret.data()[idx12] = m3.data()[idx] + m5.data()[idx]; // C12
+				ret.data()[idx21] = m2.data()[idx] + m4.data()[idx]; // C21
+				ret.data()[idx22] = m1.data()[idx] - m2.data()[idx] + m3.data()[idx] + m6.data()[idx]; // C22
 			}
 		}
 		return ;
 	}
+
 	/*
-	private static final DoubleMatrix2D strassen_answer(final DoubleMatrix2D r, final DoubleMatrix2D s, final DoubleMatrix2D t, final DoubleMatrix2D u)
-	{
-		final int m = r.rows();
-		final int n = m*2;
-		final DoubleMatrix2D ret = new DoubleMatrix2D(n,n);
-		copy_two(ret,r,0,0);
-		copy_two(ret,s,0,m);
-		copy_two(ret,t,m,0);
-		copy_two(ret,u,m,m);
-		return ret;
-	}
-	*/
 	private static final void copy_two(final DoubleMatrix2D dest, final DoubleMatrix2D src, final int dest_i, final int dest_j)
 	{
 		for (int i = 0; i < src.rows(); i++)
 			for (int j = 0; j < src.rows(); j++)
 				dest.set(dest_i+i,dest_j+j,src.get(i,j));
 	}
+	*/
 
 	// assumes rows==cols
 	private static final void copy_one(final DoubleMatrix2D dest, final DoubleMatrix2D src, final int src_i, final int src_j)
@@ -1090,14 +1106,13 @@ public final class MathUtils {
 		return ret;
 	}
 
-	void testMatrixMultiply(final DoubleMatrix2D one, final DoubleMatrix2D two)
+	final static void testMatrixMultiply(final DoubleMatrix2D one, final DoubleMatrix2D two)
 	{
 		final DoubleMatrix2D resultOne = matrixMultiplyStrassen(one,two);
 		final DoubleMatrix2D resultTwo = matrixMultiply(one,two);
 		for (int i = 0; i < resultOne.data().length; i++)
 		{
 			if ( (float)resultOne.data()[i] != (float)resultTwo.data()[i])
-				// unit test, haha
 			{
 				throw new RuntimeException("i:"+i);
 			}
@@ -1110,7 +1125,10 @@ public final class MathUtils {
 		final int len = 1024;
 		final DoubleMatrix2D one = DoubleMatrix2D.random(len,len);
 		final DoubleMatrix2D two = DoubleMatrix2D.random(len,len);
+//		final DoubleMatrix2D one = DoubleMatrix2D.diagonal(new double[]{1,2});
+//		final DoubleMatrix2D two = DoubleMatrix2D.diagonal(new double[]{2,1});
 		DoubleMatrix2D foo = null;
+//		testMatrixMultiply(one,two);
 		for (int i = 0; i < 10; i++)
 			foo = matrixMultiplyStrassen(one,two);
 		logTime("Warmed up");

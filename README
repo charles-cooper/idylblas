@@ -7,7 +7,7 @@ IdylBLAS is a BLAS implementation which is intended to provide native-like linea
 
 IdylBLAS is
   1) Fast. Performance is (significantly) faster than any known Java implementation and is intended to be competitive with native BLAS implementations.
-  2) Numerically precise / portable. Computations are intended to be numerically precise, so computations can be carried out on different architectures without worrying about incompatibility of results (which is important, for example, in parallel programming).
+  2) Numerically precise / portable. Computations are intended to be numerically precise, so computations can be carried out on different JVM implementations and different architectures without worrying about incompatibility of results (which is important, for example, in parallel programming).
   3) Lightweight. Fewer lines of code means that there are fewer chances for bugs and the class files will fit more comfortably in cache.
   4) Self-contained. No external dependencies, so you don't have to download a dozen JARs to make it compile (IdylBLAS does explicitly fork files -- mostly interfaces and abstract classes -- from existing libraries for the purpose of providing drop-in replacement functionality).
   5) 100% pure Java implementation. This means that developers don't have to download or compile architecture specific code (besides the JRE), and the JNI is not used, so performing large array / matrix calculations does not incur the cost of copying memory outside the JVM.
