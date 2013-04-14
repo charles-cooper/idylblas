@@ -24,7 +24,7 @@
  * ====================================================
  */
 
-import com.idylwood.matrix;
+package com.idylwood.matrix;
 
 // Light wrapper for double vector. Mostly for readable comparison with other linear algebra libraries
 public class DoubleMatrix1D

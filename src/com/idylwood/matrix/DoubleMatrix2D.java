@@ -78,6 +78,14 @@ public class DoubleMatrix2D
 	{
 		data[index(row,col)] = val;
 	}
+	// copies other into the block matrix situated at row,col
+	public void set(final int row, final int col, final DoubleMatrix2D other)
+	{
+		for (int i = 0; i < other.rows();i++)
+		{
+			System.arraycopy(other.data(), i*other.cols(), this.data(), col + (row+i)*this.cols(), other.cols());
+		}
+	}
 	public void increment(final int row, final int col, final double incr)
 	{
 		data[index(row,col)] += incr;
@@ -95,13 +103,50 @@ public class DoubleMatrix2D
 	{
 		return add(this,other);
 	}
+	public DoubleMatrix2D plus(final DoubleMatrix2D other, final int this_i, final int this_j, final int other_i, final int other_j, final int num_rows, final int num_cols)
+	{
+		final DoubleMatrix2D ret = new DoubleMatrix2D(num_rows,num_cols);
+		for (int i = 0; i < num_rows; i++)
+		{
+			int this_idx = this.index(this_i+i, this_j);
+			int other_idx = other.index(other_i+i, other_j);
+			int ret_idx = ret.index(i, 0);
+			for (int j = 0; j < num_cols; j++)
+			{
+				final double x = this.data[this_idx+j];
+				final double y = other.data[other_idx+j];
+				ret.data[ret_idx+j] = x+y;
+			}
+		}
+		return ret;
+	}
+	public DoubleMatrix2D minus(final DoubleMatrix2D other, final int this_i, final int this_j, final int other_i, final int other_j, final int num_rows, final int num_cols)
+	{
+		final DoubleMatrix2D ret = new DoubleMatrix2D(num_rows,num_cols);
+		for (int i = 0; i < num_rows; i++)
+		{
+			int this_idx = this.index(this_i+i, this_j);
+			int other_idx = other.index(other_i+i, other_j);
+			int ret_idx = ret.index(i, 0);
+			for (int j = 0; j < num_cols; j++)
+			{
+				final double x = this.data[this_idx+j];
+				final double y = other.data[other_idx+j];
+				ret.data[ret_idx+j] = x-y;
+			}
+		}
+		return ret;
+	}
+
 	public DoubleMatrix2D minus(final DoubleMatrix2D other)
 	{
 		return subtract(this,other);
 	}
 	public static DoubleMatrix2D add(final DoubleMatrix2D one, final DoubleMatrix2D two)
 	{
-		if (one.cols()!=two.cols() || one.rows()!=two.rows())
+		if (one.cols()!=two.cols())
+			throw new RuntimeException("uh oh");
+		if (one.rows()!=two.rows())
 			throw new RuntimeException("uh oh");
 		final double[] data = MathUtils.add(one.data(),two.data());
 		final DoubleMatrix2D ret = new DoubleMatrix2D(data,one.rows(),one.cols());
