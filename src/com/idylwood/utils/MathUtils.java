@@ -623,20 +623,20 @@ public final class MathUtils {
 		double sum = 0;
 		double err = 0;
 		int i = 0;
-		for (; i < modLen; i+= unroll)
+		int xPtr = startOne;
+		int yPtr = startTwo;
+		for (; i < modLen; i+= unroll,xPtr+=unroll,yPtr+=unroll)
 		{
 			// this line depends on unroll variable.
-			final int xPtr = i + startOne;
-			final int yPtr = i + startTwo;
-			final double prod = x[xPtr]*y[yPtr] + x[xPtr+1]*y[yPtr+1] + x[xPtr+2]*y[yPtr+2];
+			final double prod = x[xPtr]*y[yPtr]
+					+ x[xPtr+1]*y[yPtr+1]
+					+ x[xPtr+2]*y[yPtr+2];
 			final double hi = sum + prod;
 			err += (hi - sum) - prod;
 			sum = hi;
 		}
-		for (; i < len; i++)
+		for (; i < len; i++,xPtr++,yPtr++)
 		{
-			final int xPtr = i + startOne;
-			final int yPtr = i + startTwo;
 			final double prod = x[xPtr]*y[yPtr];
 			final double hi = sum + prod;
 			err += (hi - sum) - prod;
@@ -673,93 +673,85 @@ public final class MathUtils {
 		if (!isPowerOfTwo(first.rows()))
 			return null;
 		final DoubleMatrix2D ret = new DoubleMatrix2D(first.rows(),first.rows());
-		strassen(first,second, ret, 0,0,0, first.rows());//, first.rows());
+		strassen(first, second, ret);
 		return ret;
 	}
-	private static final void strassen(final DoubleMatrix2D first, final DoubleMatrix2D second, final DoubleMatrix2D ret, final int first_idx, final int second_idx, final int ret_idx, final int n)
+	private static final int STRASSEN_IS_SLOWER = 256;
+	private static final void strassen(final DoubleMatrix2D first, final DoubleMatrix2D second, final DoubleMatrix2D ret)
 	{
-		// TODO move these checks elsewhere
-		//final DoubleMatrix2D ret = new DoubleMatrix2D(n,n);
+		final int n = first.rows();
 		if (1==n) // 1x1
 		{
 			ret.set(0,0,first.get(0,0)*second.get(0,0));
-			//ret.data()[ret_idx] = first.data()[first_idx] * second.data()[second_idx];
 			return;
 		}
 		// TODO case 2==n
 
 		// see wikipedia for explanation of variable names
-		final DoubleMatrix2D c11,c12,c21,c22, a11,a12,a21,a22,b11,b12,b21,b22, m1,m2,m3,m4,m5,m6,m7;
 		final int m = n/2;
-		if (m > 256) // otherwise strassen is faster
+		final DoubleMatrix2D a11,a12,a21,a22,b11,b12,b21,b22, m1,m2,m3,m4,m5,m6,m7;
+		a11 = first.submatrix(0,0,m,m);
+		a12 = first.submatrix(0,m,m,m);
+		a21 = first.submatrix(m,0,m,m);
+		a22 = first.submatrix(m,m,m,m);
+		b11 = second.submatrix(0,0,m,m);
+		b12 = second.submatrix(0,m,m,m);
+		b21 = second.submatrix(m,0,m,m);
+		b22 = second.submatrix(m,m,m,m);
+		m1 = new DoubleMatrix2D(m,m); m2 = new DoubleMatrix2D(m,m);
+		m3 = new DoubleMatrix2D(m,m); m4 = new DoubleMatrix2D(m,m);
+		m5 = new DoubleMatrix2D(m,m); m6 = new DoubleMatrix2D(m,m);
+		m7 = new DoubleMatrix2D(m,m);
+		if (m > STRASSEN_IS_SLOWER) // otherwise strassen is faster
 		//if (false)
-//		if (true)
+		//if (true)
 		{
-			m1 = new DoubleMatrix2D(m,m); m2 = new DoubleMatrix2D(m,m);
-			m3 = new DoubleMatrix2D(m,m); m4 = new DoubleMatrix2D(m,m);
-			m5 = new DoubleMatrix2D(m,m); m6 = new DoubleMatrix2D(m,m);
-			m7 = new DoubleMatrix2D(m,m);
-			// m1 = (a11+a22)(b11+b22)
-			strassen(first.submatrix(0,0,m,m).plus(first.submatrix(m,m,m,m)),
-					second.submatrix(0,0,m,m).plus(second.submatrix(m,m,m,m)),
-					m1, 0,0,0, m);
-			// m2 = (a21+a22)b11
-			strassen(first.submatrix(m,0,m,m).plus(first.submatrix(m,m,m,m)),
-					second.submatrix(0,0,m,m),
-					m2, 0,0,0, m);
-			// m3 = a11(b12-b22)
-			strassen(first.submatrix(0,0,m,m),
-					second.submatrix(0,m,m,m).minus(second.submatrix(m,m,m,m)),
-					m3, 0,0,0, m);
-			// m4 = a22(b21-b11)
-			strassen(first.submatrix(m,m,m,m),
-					second.submatrix(m,0,m,m).minus(second.submatrix(0,0,m,m)),
-					m4, 0,0,0, m);
-			// m5 = (a11+a12)b22
-			strassen(first.submatrix(0,0,m,m).plus(first.submatrix(0,m,m,m)),
-					second.submatrix(m,m,m,m),
-					m5,0,0,0,m);
-			// m6 = (a21-a11)(b11+b12)
-			strassen(first.submatrix(m,0,m,m).minus(first.submatrix(0,0,m,m)),
-					second.submatrix(0,0,m,m).plus(second.submatrix(0,m,m,m)),
-					m6,0,0,0,m);
-			// m7 = (a12-a22)(b21+b22)
-			strassen(first.submatrix(0,m,m,m).minus(first.submatrix(m,m,m,m)),
-					second.submatrix(m,0,m,m).plus(second.submatrix(m,m,m,m)),
-					m7,0,0,0,m);
+			DoubleMatrix2D slot1 = new DoubleMatrix2D(m,m);
+			DoubleMatrix2D slot2 = new DoubleMatrix2D(m,m);
+			// if we aren't on the first iteration anymore it is safe to overwrite the data in the arguments
+			// (a11+a22)(b11+b22)
+			strassen(DoubleMatrix2D.add(a11,a22,slot1), DoubleMatrix2D.add(b11,b22,slot2), m1);
+			// (a21+a22)(b11)
+			strassen(DoubleMatrix2D.add(a21,a22,slot1), b11, m2);
+			// (a11)(b12-b22)
+			strassen(a11,DoubleMatrix2D.subtract(b12,b22,slot2), m3);
+			// (a22)(b21-b11)
+			strassen(a22,DoubleMatrix2D.subtract(b21,b11,slot2), m4);
+			// (a11+a12)(b22)
+			strassen(DoubleMatrix2D.add(a11,a12,slot1),b22, m5);
+			// (a21-a11)(b11+b12)
+			strassen(DoubleMatrix2D.subtract(a21,a11,slot1),DoubleMatrix2D.add(b11,b12,slot2), m6);
+			// (a12-a22)(b21+b22)
+			strassen(DoubleMatrix2D.subtract(a12,a22,slot1),DoubleMatrix2D.add(b21,b22,slot2), m7);
 		}
 		else
 		{
-			a11 = new DoubleMatrix2D(m,m); a12 = new DoubleMatrix2D(m,m);
-			a21 = new DoubleMatrix2D(m,m); a22 = new DoubleMatrix2D(m,m);
-			b11 = new DoubleMatrix2D(m,m); b12 = new DoubleMatrix2D(m,m);
-			b21 = new DoubleMatrix2D(m,m); b22 = new DoubleMatrix2D(m,m);
-			// TODO change copy_one to set.
-			copy_one(a11,first,0,0);
-			copy_one(a12,first,0,m);
-			copy_one(a21,first,m,0);
-			copy_one(a22,first,m,m);
-			copy_one(b11,second,0,0);
-			copy_one(b12,second,0,m);
-			copy_one(b21,second,m,0);
-			copy_one(b22,second,m,m);
-			m1 = matrixMultiplyFast(a11.plus(a22), b11.plus(b22));
-			m2 = matrixMultiplyFast(a21.plus(a22), b11);
-			m3 = matrixMultiplyFast(a11,b12.minus(b22));
-			m4 = matrixMultiplyFast(a22, b21.minus(b11));
-			m5 = matrixMultiplyFast(a11.plus(a12), b22);
-			m6 = matrixMultiplyFast(a21.minus(a11), b11.plus(b12));
-			m7 = matrixMultiplyFast(a12.minus(a22), b21.plus(b22));
+			DoubleMatrix2D slot1 = new DoubleMatrix2D(m,m);
+			DoubleMatrix2D slot2 = new DoubleMatrix2D(m,m);
+			// if we aren't on the first iteration anymore it is safe to overwrite the data in the arguments
+			// (a11+a22)(b11+b22)
+			matrixMultiplyFast(DoubleMatrix2D.add(a11,a22,slot1), DoubleMatrix2D.add(b11,b22,slot2), m1, false);
+			// (a21+a22)(b11)
+			matrixMultiplyFast(DoubleMatrix2D.add(a21,a22,slot1), b11, m2, false);
+			// (a11)(b12-b22)
+			matrixMultiplyFast(a11,DoubleMatrix2D.subtract(b12,b22,slot2), m3, false);
+			// (a22)(b21-b11)
+			matrixMultiplyFast(a22,DoubleMatrix2D.subtract(b21,b11,slot2), m4, false);
+			// (a11+a12)(b22)
+			matrixMultiplyFast(DoubleMatrix2D.add(a11,a12,slot1),b22, m5, false);
+			// (a21-a11)(b11+b12)
+			matrixMultiplyFast(DoubleMatrix2D.subtract(a21,a11,slot1),DoubleMatrix2D.add(b11,b12,slot2), m6, false);
+			// (a12-a22)(b21+b22)
+			matrixMultiplyFast(DoubleMatrix2D.subtract(a12,a22,slot1),DoubleMatrix2D.add(b21,b22,slot2), m7, false);
 		}
 
 		int idx = 0;
-		int ret_idx_cpy = ret_idx;
-		for (int i = 0; i < m; i++,ret_idx_cpy+=n)
+		int idx2 = ret.index(0,0);
+		for (int i = 0; i < m; i++)
 		{
-			for (int j = 0; j < m; j++,idx++,ret_idx_cpy++)
+			for (int j = 0; j < m; j++, idx++, idx2++) // try to help it pipeline the instructions
 			{
 				// fracking pointer arithmetic
-				final int idx2 = ret_idx + j + i*n;
 				final int idx11 = idx2;
 				final int idx12 = idx2 + m;
 				final int idx21 = idx2 + m*n;
@@ -769,26 +761,11 @@ public final class MathUtils {
 				ret.data()[idx21] = m2.data()[idx] + m4.data()[idx]; // C21
 				ret.data()[idx22] = m1.data()[idx] - m2.data()[idx] + m3.data()[idx] + m6.data()[idx]; // C22
 			}
+			// since idx2 is going to be m more from where it was at the beginning of this iteration
+			// and we want it to be n more.
+			idx2+=m;
 		}
 		return ;
-	}
-
-	/*
-	private static final void copy_two(final DoubleMatrix2D dest, final DoubleMatrix2D src, final int dest_i, final int dest_j)
-	{
-		for (int i = 0; i < src.rows(); i++)
-			for (int j = 0; j < src.rows(); j++)
-				dest.set(dest_i+i,dest_j+j,src.get(i,j));
-	}
-	*/
-
-	// assumes rows==cols
-	private static final void copy_one(final DoubleMatrix2D dest, final DoubleMatrix2D src, final int src_i, final int src_j)
-	{
-		if (dest.rows()!=dest.cols()) throw new RuntimeException("bad dest");
-		for (int i = 0; i < dest.rows(); i++)
-			for (int j = 0; j < dest.rows(); j++)
-				dest.set(i,j,src.get(src_i+i,src_j+j));
 	}
 
 	static final boolean isPowerOfTwo(final int i)
@@ -806,10 +783,11 @@ public final class MathUtils {
 			// extract the column beforehand to improve cache hits
 			// TODO think about extracting on fly to save cost of read
 			final double vector[] = second.extractColumn(i);
-			for (int j = 0; j < first.rows(); j++)
+			int idx = ret.index(0,i);
+			for (int j = 0; j < first.rows(); j++,idx+=ret.real_row_size())
 			{
-				final double val = linearCombination(first.data(), vector, j*first.cols(), 0, first.cols());
-				ret.set(j, i, val);
+				final double val = linearCombination(first.data(), vector, first.index(j,0), 0, first.cols());
+				ret.data()[idx] = val;
 			}
 		}
 		return ret;
@@ -817,23 +795,48 @@ public final class MathUtils {
 
 	public static final DoubleMatrix2D matrixMultiplyFast(final DoubleMatrix2D first, final DoubleMatrix2D second)
 	{
-		if (first.cols()!=second.rows())
-			throw new ArrayIndexOutOfBoundsException("Trying to multiply matrices of different dimensions?!");
 		final DoubleMatrix2D ret = new DoubleMatrix2D(first.rows(), second.cols());
-		for (int i = 0; i < second.cols(); i++)
+		return matrixMultiplyFast(first,second,ret,true);
+	}
+
+	public static final DoubleMatrix2D matrixMultiplyFast(final DoubleMatrix2D first, final DoubleMatrix2D second, final DoubleMatrix2D ret, final boolean sanity_check)
+	{
+		if (sanity_check)
+		{
+			if (first.cols()!=second.rows())
+				throw new ArrayIndexOutOfBoundsException("Trying to multiply matrices of different dimensions?!");
+			if (ret.rows()!=first.rows()||ret.cols()!=second.cols())
+				throw new IllegalArgumentException("Bad ret");
+		}
+		int first_idx = first.index(0,0);
+		int ret_idx = 0;
+		for (int i = 0; i < second.cols(); i++,ret_idx-=ret.rows()*ret.real_row_size()-1,first_idx-=first.rows()*first.real_row_size())
 		{
 			// extract the column beforehand to improve cache hits
-			// TODO think about extracting on fly to save cost of read
 			final double vector[] = second.extractColumn(i);
-			for (int j = 0; j < first.rows(); j++)
+			// unroll the loop, since the JIT doesn't seem to want to do so.
+			// in general i am guessing that if there is a cache miss on write
+			// that is because the matrix is so big that the linear combination
+			// will fill up the cache with other stuff anyways
+			int j = 0;
+			for (; j < first.rows()/2; j++,ret_idx+=ret.real_row_size()<<1,first_idx+=first.real_row_size()<<1)
 			{
-				final double val = linearCombinationFast(first.data(), vector, j*first.cols(), 0, first.cols());
-				ret.set(j, i, val);
+				// if (first_idx!=first.index(j,0)) throw new RuntimeException("You have bug!");
+				// if (ret_idx!=ret.index(j,i)) throw new RuntimeException("You have bug!");
+				ret.data()[ret_idx]
+					= linearCombinationFast(first.data(), vector, first_idx, 0, first.cols());
+				ret.data()[ret_idx + ret.real_row_size()]
+						= linearCombinationFast(first.data(),vector,first_idx+first.real_row_size(),0,first.cols());
+			}
+			// extra stuff
+			if (0!=(first.rows()&1))
+			{
+				ret.data()[ret_idx]
+					= linearCombinationFast(first.data(), vector, first_idx, 0, first.cols());
 			}
 		}
 		return ret;
 	}
-
 
 	public static final double[] extractColumn(final double[][] matrix, final int col)
 	{
@@ -952,7 +955,7 @@ public final class MathUtils {
 		final double []ret = new double[matrix.rows()];
 		for (int i = 0; i < matrix.rows(); i++)
 		{
-			ret[i] = linearCombinationFast(matrix.data(),vector,i*matrix.cols(),0,matrix.cols());
+			ret[i] = linearCombinationFast(matrix.data(),vector,matrix.index(i,0),0,matrix.cols());
 		}
 		return ret;
 	}
@@ -962,7 +965,7 @@ public final class MathUtils {
 		final double ret[] = new double[matrix.rows()];
 		for (int i = 0; i < matrix.rows(); i++)
 		{
-			ret[i] = linearCombinationFast(matrix.data(),vector,i*matrix.cols(),0,matrix.cols());
+			ret[i] = linearCombination(matrix.data(),vector,matrix.index(i,0),0,matrix.cols());
 		}
 		return ret;
 	}
@@ -991,19 +994,18 @@ public final class MathUtils {
 		final int unroll = 3;
 		final int modLen = len - len%unroll;
 		int i = 0;
-		for (; i < modLen; i+=unroll)
+		int xPtr = startOne;
+		int yPtr = startTwo;
+		for (; i < modLen; i+=unroll,xPtr+=unroll,yPtr+=unroll)
 		{
-			final int xPtr = i + startOne;
-			final int yPtr = i + startTwo;
 			ret+= x[xPtr]*y[yPtr]
 				+ x[xPtr+1]*y[yPtr+1]
 				+ x[xPtr+2]*y[yPtr+2];
-				//+ x[xPtr+3]*y[yPtr+3];
 		}
 		// get the terms at the end
-		for (; i < len; i++)
+		for (; i < len; i++,xPtr++,yPtr++)
 		{
-			ret += x[i+startOne]*y[i+startTwo];
+			ret += x[xPtr]*y[yPtr];
 		}
 		return ret;
 	}
@@ -1106,34 +1108,122 @@ public final class MathUtils {
 		return ret;
 	}
 
+	final static boolean fuzzyEquals(final double d, final double e)
+	{
+		return (float)d==(float)e;
+	}
+	final static boolean fuzzyEquals(final double []x, final double []y)
+	{
+		if (x.length!=y.length)
+			return false;
+		for (int i = 0; i < x.length; i++)
+			if (!fuzzyEquals(x[i],y[i]))
+				return false;
+		return true;
+	}
+	final static boolean fuzzyEquals(final DoubleMatrix2D a, final DoubleMatrix2D b)
+	{
+		if (a.cols()!=b.cols()||a.rows()!=b.rows())
+			return false;
+		for (int i = 0; i < a.rows(); i++)
+			for (int j = 0; j < a.rows(); j++)
+				if (!fuzzyEquals(a.get(i,j),b.get(i,j)))
+					return false;
+		return true;
+	}
+
 	final static void testMatrixMultiply(final DoubleMatrix2D one, final DoubleMatrix2D two)
 	{
 		final DoubleMatrix2D resultOne = matrixMultiplyStrassen(one,two);
 		final DoubleMatrix2D resultTwo = matrixMultiply(one,two);
 		for (int i = 0; i < resultOne.data().length; i++)
-		{
 			if ( (float)resultOne.data()[i] != (float)resultTwo.data()[i])
-			{
 				throw new RuntimeException("i:"+i);
-			}
-		}
+	}
+	final static void testMatrixMultiply()
+	{
+		final DoubleMatrix2D a = DoubleMatrix2D.identity(2);
+		final DoubleMatrix2D b = DoubleMatrix2D.random(2,2);
+		if (!fuzzyEquals(matrixMultiply(a,b),b))
+			throw new RuntimeException("Failed matrixMultiply");
+		if (!fuzzyEquals(matrixMultiply(b,a),b))
+			throw new RuntimeException("Failed matrixMultiply");
+		System.out.println("passed matrixMultiply");
+	}
+	final static void testMatrixMultiplyFast()
+	{
+		final DoubleMatrix2D a = DoubleMatrix2D.identity(2);
+		final DoubleMatrix2D b = DoubleMatrix2D.random(2,2);
+		if (!fuzzyEquals(matrixMultiplyFast(a,b),b))
+			throw new RuntimeException("Failed matrixMultiplyFast");
+		if (!fuzzyEquals(matrixMultiplyFast(b,a),b))
+			throw new RuntimeException("Failed matrixMultiplyFast");
+		System.out.println("passed matrixMultiplyFast");
+	}
+	final static void testMatrixMultiplyStrassen()
+	{
+		final DoubleMatrix2D a = DoubleMatrix2D.identity(2);
+		final DoubleMatrix2D b = DoubleMatrix2D.random(2,2);
+		if (!fuzzyEquals(matrixMultiplyStrassen(a,b),b))
+			throw new RuntimeException("Failed matrixMultiplyStrassen");
+		if (!fuzzyEquals(matrixMultiplyStrassen(b,a),b))
+			throw new RuntimeException("Failed matrixMultiplyStrassen");
+		System.out.println("passed matrixMultiplyStrassen");
+	}
+	final static void testLinearCombination()
+	{
+		final double[] one = new double[]{1,1,1,1};
+		final double[] two = new double[]{1,1,1,1};
+		if (4.0!=linearCombination(one,two))
+			throw new RuntimeException("linearCombination Test Failed!");
+		if (4.0!=linearCombinationFast(one,two))
+			throw new RuntimeException("linearCombinationFast Test Failed!");
+		System.out.println("passed linearCombination");
+	}
+	final static void testAddSubtract()
+	{
+		DoubleMatrix2D test = DoubleMatrix2D.random(32,32);
+		DoubleMatrix2D result = test.plus(test).minus(test);
+		if (!fuzzyEquals(test,result))
+			throw new RuntimeException("addSubtract Test Failed!");
+		DoubleMatrix2D test1 = test.submatrix(0, 0, 16, 16);
+		DoubleMatrix2D test2 = test.submatrix(16, 16, 16, 16);
+		result = test1.plus(test2).minus(test2);
+		if (!fuzzyEquals(test1,result))
+			throw new RuntimeException("addSubtract Test Failed!");
+		result = test2.plus(test1).minus(test1);
+		if (!fuzzyEquals(test2,result))
+			throw new RuntimeException("addSubtract Test Failed!");
+
+		test = DoubleMatrix2D.identity(2);
+		if (0.0!=test.submatrix(0,1,1,1).plus(test.submatrix(1,0,1,1)).get(0,0))
+			throw new RuntimeException("addSubtractTest Failed!");
+		if (0.0!=test.submatrix(0,1,1,1).minus(test.submatrix(1,0,1,1)).get(0,0))
+			throw new RuntimeException("addSubtractTest Failed!");
+		System.out.println("passed addSubtract");
 	}
 
 	public static void main(String[] args)
 	{
 		logTime("start");
+		testAddSubtract();
+		testLinearCombination();
+		testMatrixMultiply();
+		testMatrixMultiplyFast();
+		testMatrixMultiplyStrassen();
 		final int len = 1024;
 		final DoubleMatrix2D one = DoubleMatrix2D.random(len,len);
 		final DoubleMatrix2D two = DoubleMatrix2D.random(len,len);
-//		final DoubleMatrix2D one = DoubleMatrix2D.diagonal(new double[]{1,2});
-//		final DoubleMatrix2D two = DoubleMatrix2D.diagonal(new double[]{2,1});
+//		final DoubleMatrix2D one = DoubleMatrix2D.diagonal(new double[]{1,2,1,1});
+//		final DoubleMatrix2D two = DoubleMatrix2D.diagonal(new double[]{2,1,1,1});
 		DoubleMatrix2D foo = null;
-//		testMatrixMultiply(one,two);
-		for (int i = 0; i < 10; i++)
+		testMatrixMultiply(one,two); System.out.println("passed");
+		logTime("one");
+		for (int i = 0; i < 5; i++)
 			foo = matrixMultiplyStrassen(one,two);
 		logTime("Warmed up");
-		//for (int i = 0; i < 1000; i++)
-			foo = matrixMultiplyStrassen(one,two);
+//		for (int i = 0; i < 1000; i++)
+			foo = matrixMultiplyStrassen(two,one);
 		logTime("done");
 
 		if (true) return;

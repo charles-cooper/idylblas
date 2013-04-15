@@ -1,8 +1,7 @@
 package com.idylwood.matrix;
-
+/*
 class SubDoubleMatrix2D extends DoubleMatrix2D
 {
-
 	private final int row_offset;
 	private final int col_offset;
 	private final DoubleMatrix2D parent;
@@ -19,5 +18,5 @@ class SubDoubleMatrix2D extends DoubleMatrix2D
 	{
 		return parent.index(row+this.row_offset, col+this.col_offset);
 	}
-	
 }
+*/
