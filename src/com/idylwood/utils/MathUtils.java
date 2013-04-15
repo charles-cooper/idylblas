@@ -615,10 +615,10 @@ public final class MathUtils {
 		//if (true) return MathUtils.sum(MathUtils.multiply(x,y));
 		if (startOne + len > x.length || startTwo + len > y.length)
 			throw new ArrayIndexOutOfBoundsException("Vector indices don't make sense!");
-		final int unroll = 3; // don't blindly change this without changing the loop!
+		final int unroll = 4; // don't blindly change this without changing the loop!
 		// unroll was tuned to my machine. the optimal value is
-		// probably architecture specific and probably depends on
-		// the number of CPU registers
+		// probably architecture specific. one day java is give access to SIMD
+		// instructions and then this can be optimized more.
 		final int modLen = len - len%unroll;
 		double sum = 0;
 		double err = 0;
@@ -630,7 +630,8 @@ public final class MathUtils {
 			// this line depends on unroll variable.
 			final double prod = x[xPtr]*y[yPtr]
 					+ x[xPtr+1]*y[yPtr+1]
-					+ x[xPtr+2]*y[yPtr+2];
+					+ x[xPtr+2]*y[yPtr+2]
+					+ x[xPtr+3]*y[yPtr+3];
 			final double hi = sum + prod;
 			err += (hi - sum) - prod;
 			sum = hi;
@@ -663,7 +664,7 @@ public final class MathUtils {
 	}
 
 	// implementation of Strassen's algorithm.
-	// not optimized / debugged yet.
+	// not fast enough yet.
 	private static final DoubleMatrix2D matrixMultiplyStrassen(final DoubleMatrix2D first, final DoubleMatrix2D second)
 	{
 		if (first.rows()!=first.cols())
@@ -676,7 +677,7 @@ public final class MathUtils {
 		strassen(first, second, ret);
 		return ret;
 	}
-	private static final int STRASSEN_IS_SLOWER = 256;
+	private static final int STRASSEN_IS_SLOWER = 256; // this should be tuned for different computers
 	private static final void strassen(final DoubleMatrix2D first, final DoubleMatrix2D second, final DoubleMatrix2D ret)
 	{
 		final int n = first.rows();
@@ -749,9 +750,10 @@ public final class MathUtils {
 		int idx2 = ret.index(0,0);
 		for (int i = 0; i < m; i++)
 		{
-			for (int j = 0; j < m; j++, idx++, idx2++) // try to help it pipeline the instructions
+			for (int j = 0; j < m; j++,idx++,idx2++) // try to help it pipeline the instructions
 			{
 				// fracking pointer arithmetic
+				// TODO refactor to use DoubleMatrix2D.ptr()
 				final int idx11 = idx2;
 				final int idx12 = idx2 + m;
 				final int idx21 = idx2 + m*n;
@@ -773,6 +775,7 @@ public final class MathUtils {
 		return (i & (~i + 1)) == i;
 	}
 
+	// TODO refactor to use DoubleMatrix2D.ptr()
 	public static final DoubleMatrix2D matrixMultiply(final DoubleMatrix2D first, final DoubleMatrix2D second)
 	{
 		if (first.cols()!=second.rows())
@@ -799,6 +802,7 @@ public final class MathUtils {
 		return matrixMultiplyFast(first,second,ret,true);
 	}
 
+	// TODO refactor to use DoubleMatrix2D.ptr()
 	public static final DoubleMatrix2D matrixMultiplyFast(final DoubleMatrix2D first, final DoubleMatrix2D second, final DoubleMatrix2D ret, final boolean sanity_check)
 	{
 		if (sanity_check)
@@ -809,7 +813,7 @@ public final class MathUtils {
 				throw new IllegalArgumentException("Bad ret");
 		}
 		int first_idx = first.index(0,0);
-		int ret_idx = 0;
+		int ret_idx = ret.index(0,0);
 		for (int i = 0; i < second.cols(); i++,ret_idx-=ret.rows()*ret.real_row_size()-1,first_idx-=first.rows()*first.real_row_size())
 		{
 			// extract the column beforehand to improve cache hits
@@ -826,7 +830,7 @@ public final class MathUtils {
 				ret.data()[ret_idx]
 					= linearCombinationFast(first.data(), vector, first_idx, 0, first.cols());
 				ret.data()[ret_idx + ret.real_row_size()]
-						= linearCombinationFast(first.data(),vector,first_idx+first.real_row_size(),0,first.cols());
+					= linearCombinationFast(first.data(),vector,first_idx+first.real_row_size(),0,first.cols());
 			}
 			// extra stuff
 			if (0!=(first.rows()&1))
@@ -991,7 +995,7 @@ public final class MathUtils {
 		if (startOne + len > x.length || startTwo + len > y.length)
 			throw new ArrayIndexOutOfBoundsException("Bad length!");
 		double ret = 0;
-		final int unroll = 3;
+		final int unroll = 4;
 		final int modLen = len - len%unroll;
 		int i = 0;
 		int xPtr = startOne;
@@ -1000,7 +1004,8 @@ public final class MathUtils {
 		{
 			ret+= x[xPtr]*y[yPtr]
 				+ x[xPtr+1]*y[yPtr+1]
-				+ x[xPtr+2]*y[yPtr+2];
+				+ x[xPtr+2]*y[yPtr+2]
+				+ x[xPtr+3]*y[yPtr+3];
 		}
 		// get the terms at the end
 		for (; i < len; i++,xPtr++,yPtr++)
@@ -1206,12 +1211,22 @@ public final class MathUtils {
 	public static void main(String[] args)
 	{
 		logTime("start");
+		final int len = 1000*1000*100;
+		final double[] x = random(len);
+		final double[] y = random(len);
+		for (int i = 0; i < 5; i++)
+			linearCombinationFast(x,y);
+		logTime("warmed up");
+		linearCombinationFast(x,y);
+		logTime("done");
+		if (true) return;
+		logTime("start");
 		testAddSubtract();
 		testLinearCombination();
 		testMatrixMultiply();
 		testMatrixMultiplyFast();
 		testMatrixMultiplyStrassen();
-		final int len = 1024;
+		//final int len = 1024;
 		final DoubleMatrix2D one = DoubleMatrix2D.random(len,len);
 		final DoubleMatrix2D two = DoubleMatrix2D.random(len,len);
 //		final DoubleMatrix2D one = DoubleMatrix2D.diagonal(new double[]{1,2,1,1});
@@ -1222,7 +1237,7 @@ public final class MathUtils {
 		for (int i = 0; i < 5; i++)
 			foo = matrixMultiplyStrassen(one,two);
 		logTime("Warmed up");
-//		for (int i = 0; i < 1000; i++)
+		for (int i = 0; i < 1000; i++)
 			foo = matrixMultiplyStrassen(two,one);
 		logTime("done");
 

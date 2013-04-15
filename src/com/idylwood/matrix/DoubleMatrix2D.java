@@ -28,6 +28,16 @@ package com.idylwood.matrix;
 
 import com.idylwood.utils.MathUtils;
 
+/**
+ * Class which represents a two dimensional matrix.
+ * Currently the data is stored internally in a one dimensional array
+ * in (C-like) row major format, but this is due to change.
+ * It also provides an iterator-like interface through ptr()
+ * and related methods.
+ * @author charles
+ *
+ */
+// TODO experiment with block recursive storage.
 public class DoubleMatrix2D
 {
 	private final double[] data;
@@ -37,6 +47,7 @@ public class DoubleMatrix2D
 	private final int real_cols;
 	private final int row_offset;
 	private final int col_offset;
+	private int ptr;
 	public DoubleMatrix2D(final double[][] data)
 	{
 		this(data.length,data[0].length);
@@ -198,6 +209,54 @@ public class DoubleMatrix2D
 	{
 		data[index(row,col)] += incr;
 	}
+	/**
+	 * Returns an integer which is the pointer to the current index.
+	 * @return
+	 */
+	public final int ptr()
+	{
+		return ptr;
+	}
+	public final void incrementRow()
+	{
+		ptr += this.real_cols;
+	}
+	public final void incrementColumn()
+	{
+		++ptr;
+	}
+	/**
+	 * Equivalent to calling ptr(); incrementRow()
+	 * @return
+	 */
+	public final int getPtrAndIncrementRow()
+	{
+		int oldPtr = ptr;
+		ptr += this.real_cols;
+		return oldPtr;
+	}
+	/**
+	 * Equivalent to calling incrementRow(); ptr()
+	 * @return
+	 */
+	public final int incrementRowAndGetPtr()
+	{
+		ptr += this.real_cols;
+		return ptr;
+	}
+	public final int getPtrAndIncrementColumn()
+	{
+		return ptr++;
+	}
+	public final int incrementColumnAndGetPtr()
+	{
+		return ++ptr;
+	}
+	/**
+	 * Returns newly allocated matrix which is the result of summing this with other
+	 * @param other
+	 * @return
+	 */
 	public final DoubleMatrix2D plus(final DoubleMatrix2D other)
 	{
 		return add(this,other);
