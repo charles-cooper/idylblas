@@ -190,6 +190,16 @@ public class DoubleMatrix2D
 		return data[index(row,col)];
 	}
 	/**
+	 * Equivalent to a call to <code>data()[this.ptr()]</code>.
+	 * Faster than <code>get(row,col)</code> since it doesn't have
+	 * to calculate <code>index(row,col)</code>
+	 * @return
+	 */
+	public final double get()
+	{
+		return data[ptr];
+	}
+	/**
 	 * Sets the entry at row, col with val.
 	 * @param row
 	 * @param col
@@ -210,12 +220,40 @@ public class DoubleMatrix2D
 		data[index(row,col)] += incr;
 	}
 	/**
+	 * Equivalent to a call to <code>data()[this.ptr()] = val</code>.
+	 * Faster than <code>set(row,col,val)</code> since it doesn't have
+	 * to calculate <code>index(row,col)</code>
+	 * @return
+	 */
+	public final void set(final double val)
+	{
+		data[ptr] = val;
+	}
+	/**
+	 * Equivalent to <code>get();set(val);</code>
+	 * @return
+	 */
+	public final double getAndSet(final double val)
+	{
+		final double old_val = data[ptr];
+		data[ptr] = val;
+		return old_val;
+	}
+	/**
 	 * Returns an integer which is the pointer to the current index.
 	 * @return
 	 */
 	public final int ptr()
 	{
 		return ptr;
+	}
+	/**
+	 * Resets the ptr to index(0,0)
+	 * @return
+	 */
+	public final void resetPtr()
+	{
+		ptr = index(0,0);
 	}
 	public final void incrementRow()
 	{

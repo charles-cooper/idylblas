@@ -1,7 +1,7 @@
 idylblas
 ========
 
-Pure Java BLAS Implementation by Idylwood Technologies
+Fast Java Linear Algebra Implementation by Idylwood Technologies
 
 IdylBLAS is a BLAS implementation which is intended to provide fast linear algebra performance on the JVM which produces output which is architecture independent.
 

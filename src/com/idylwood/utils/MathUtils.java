@@ -473,11 +473,12 @@ public final class MathUtils {
 	// which is used in all standard numerical libraries I know of:
 	// Colt, OpenGamma, Apache Commons Math, EJML.
 	//
-	// Implementation uses variant of Kahan's algorithm keeping a running error
+	// Implementation uses Kahan's algorithm keeping a running error
 	// along with the accumulator to try to cancel out the error at the end.
 	// This is much faster than Schewchuk's algorithm but not
 	// guaranteed to be perfectly precise
-	// In most cases, however, it is just as precise.
+	// In most cases, however, it is just as precise. A bound on error is given on Wikipedia.
+	// and is within 2ulp for sums where the number of terms is smaller than the order of 2^52.
 	// Due to optimization it is about 30% faster
 	// than the naive implementation on my machine.
 	public static final double sum(final double... values)
@@ -496,18 +497,20 @@ public final class MathUtils {
 			final double val = values[i] + values[i+1]
 				+ values[i+2] + values[i+3]
 				+ values[i+4] + values[i+5];
+			final double partial = val - err;
 			final double hi = sum + val;
-			err += (hi - sum) - val;
+			err = (hi - sum) - partial;
 			sum = hi;
 		}
 		for (; i < values.length; i++)
 		{
 			final double val = values[i];
+			final double partial = val - err;
 			final double hi = sum + val;
-			err += (hi - sum) - val;
+			err = (hi - sum) - partial;
 			sum = hi;
 		}
-		return sum - err;
+		return sum;
 	}
 
 	// Numerically naive, unoptimized version of sum. Intended for demonstrating superiority of
@@ -619,31 +622,33 @@ public final class MathUtils {
 		// unroll was tuned to my machine. the optimal value is
 		// probably architecture specific. one day java is give access to SIMD
 		// instructions and then this can be optimized more.
-		final int modLen = len - len%unroll;
+		final int len_down = len - len%unroll;
 		double sum = 0;
 		double err = 0;
 		int i = 0;
 		int xPtr = startOne;
 		int yPtr = startTwo;
-		for (; i < modLen; i+= unroll,xPtr+=unroll,yPtr+=unroll)
+		for (; i < len_down; i+= unroll,xPtr+=unroll,yPtr+=unroll)
 		{
 			// this line depends on unroll variable.
 			final double prod = x[xPtr]*y[yPtr]
 					+ x[xPtr+1]*y[yPtr+1]
 					+ x[xPtr+2]*y[yPtr+2]
 					+ x[xPtr+3]*y[yPtr+3];
+			final double partial = prod - err;
 			final double hi = sum + prod;
-			err += (hi - sum) - prod;
+			err = (hi - sum) - partial;
 			sum = hi;
 		}
 		for (; i < len; i++,xPtr++,yPtr++)
 		{
 			final double prod = x[xPtr]*y[yPtr];
+			final double partial = prod - err;
 			final double hi = sum + prod;
-			err += (hi - sum) - prod;
+			err = (hi - sum) - partial;
 			sum = hi;
 		}
-		return sum - err;
+		return sum;
 	}
 
 	public static final double linearCombination(final double[]x, final double[] y)
@@ -996,11 +1001,11 @@ public final class MathUtils {
 			throw new ArrayIndexOutOfBoundsException("Bad length!");
 		double ret = 0;
 		final int unroll = 4;
-		final int modLen = len - len%unroll;
+		final int len_down = len - len%unroll;
 		int i = 0;
 		int xPtr = startOne;
 		int yPtr = startTwo;
-		for (; i < modLen; i+=unroll,xPtr+=unroll,yPtr+=unroll)
+		for (; i < len_down; i+=unroll,xPtr+=unroll,yPtr+=unroll)
 		{
 			ret+= x[xPtr]*y[yPtr]
 				+ x[xPtr+1]*y[yPtr+1]
@@ -1210,6 +1215,7 @@ public final class MathUtils {
 
 	public static void main(String[] args)
 	{
+		/*
 		logTime("start");
 		final int len = 1000*1000*100;
 		final double[] x = random(len);
@@ -1242,8 +1248,9 @@ public final class MathUtils {
 		logTime("done");
 
 		if (true) return;
+		*/
 		logTime("start");
-		//final int len = 1000*1000*10;
+		final int len = 1000*1000*10;
 		final double[] data = shift(random(len),-.5);
 		logTime("random");
 		double fast,medium,slow;
