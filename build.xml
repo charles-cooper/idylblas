@@ -12,9 +12,15 @@
 			<classpath refid="project.class.path"/>
 		</javac>
 	</target>
+	<property name="jarfile" value="idylblas.jar"/>
+	<target name="jar" depends="javac" description="Make a jar">
+		<jar destfile="${jarfile}" basedir="bin"/>
+	</target>
+
 	<target name="clean" description="Cleans this project">
 		<delete dir="bin"/>
 		<delete dir="." includes="**/*.class"/>
+		<delete file="${jarfile}"/>
 	</target>
 </project>
 

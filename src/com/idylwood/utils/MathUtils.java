@@ -66,12 +66,28 @@ public final class MathUtils {
 
 	// Faster and more correct (round away from zero instead of round towards +infinity) than java.lang.Math.round.
 	private static final long ONE_HALF = Double.doubleToRawLongBits(0.5); // bits of 0.5
+	/**
+	 * Faster and more correct version of round than {@link java.lang.Math#round(double)}.
+	 * Rounds away from zero instead of round towards infinity.
+	 * In most cases it will have the same return as Math.round,
+	 * but for numbers like -0.5, -1.5, this will round down to -1, -2,
+	 * whereas JDK specification is to round up to 0, -1.
+	 * It also has no branching and so is faster.
+	 * This agrees with glibc.
+	 * @param d
+	 * @return
+	 */
 	public final static long round(final double d)
 	{
 		final long l = ONE_HALF | sign(d); // equivalent to d < 0 ? -0.5 : 0.5;
 		return (long)(d + Double.longBitsToDouble(l));
 	}
-	// returns 1L<<63 if d < 0 and 0 otherwise
+	/**
+	 * Returns a long containing the sign of d.
+	 * Returns 1L<<63 if d < 0 and 0 otherwise.
+	 * @param d
+	 * @return
+	 */
 	public static final long sign(final double d)
 	{
 		return Double.doubleToRawLongBits(d) & Long.MIN_VALUE;
@@ -239,6 +255,15 @@ public final class MathUtils {
 		return ret;
 	}
 
+	/**
+	 * Returns newly allocated array which is the result
+	 * of termwise addition of the input arrays
+	 * @param first
+	 * @param second
+	 * @throws ArrayIndexOutOfBoundsException if the arrays are of unequal length
+	 * @return
+	 * Side Effects: Allocation of the returned array
+	 */
 	final public static double [] add(final double[] first, final double[] second)
 	{
 		final int len = Math.min(first.length,second.length);
@@ -248,7 +273,15 @@ public final class MathUtils {
 		return ret;
 	}
 
-	// Returns newly allocated array whose elements are the result of pairwise multiplication x_i * y_i.
+	/**
+	 * Returns newly allocated array which is the result
+	 * of termwise multiplication of the input arrays
+	 * @param first
+	 * @param second
+	 * @throws ArrayIndexOutOfBoundsException if the arrays are of unequal length
+	 * @return
+	 * Side Effects: Allocation of the returned array
+	 */
 	final public static double [] multiply(final double [] x, final double[] y)
 	{
 		final int len = x.length;
@@ -260,7 +293,13 @@ public final class MathUtils {
 		return ret;
 	}
 
-	// takes the log of every element of the data
+	/**
+	 * Returns a newly allocated array whose elements
+	 * are the termwise log of the input
+	 * @param data
+	 * @return
+	 * Side Effects: Allocation of a new array
+	 */
 	final public static double [] log(final double[] data)
 	{
 		final double [] ret = new double[data.length];
@@ -269,8 +308,12 @@ public final class MathUtils {
 		return ret;
 	}
 
-	// infinite precision but slow and there is no bound on how
-	// much memory it will need
+	/**
+	 * Calculates the mean to arbitrary precision. Internally uses
+	 * BigDecimals so it suffers from both speed and memory.
+	 * @param data
+	 * @return
+	 */
 	final public static double meanArbitraryPrecision(final double data[])
 	{ BigDecimal mean = new BigDecimal(0);
 		for (double x : data)
@@ -307,7 +350,14 @@ public final class MathUtils {
 		return Math.sqrt(variance(values));
 	}
 
-	// Takes all the values to the power of exp
+	/**
+	 * Performs termwise Math.pow(double,double) on the elements.
+	 * @param values
+	 * @param exp
+	 * @return Newly allocated array whose elements are
+	 * termwise exponentiations of the input.
+	 * Side Effects: Allocation of new array
+	 */
 	public static final double [] pow(final double[] values, final double exp)
 	{
 		final double[] ret = new double[values.length];
@@ -316,9 +366,13 @@ public final class MathUtils {
 		return ret;
 	}
 
-	// Returns a newly allocated array with all the values
-	// of the original array added to the shift.
-	// TODO maybe rename this 'add'?
+	/**
+	 * Shifts all the elements of <code>values</code> by <code>constant</code>.
+	 * @param values
+	 * @param constant
+	 * @return Newly allocated array whose values are values[i]+constant
+	 * Side Effects: Allocation of new array
+	 */
 	public static final double [] shift(final double[] values, final double constant)
 	{
 		final double ret[] = new double[values.length];
@@ -338,14 +392,17 @@ public final class MathUtils {
 		return ret;
 	}
 
-	// numerically precise implementation of sum
-	// Optimized version of an implementation of Schewchuk's algorithm
-	// which keeps full precision by keeping O(n) space
-	// for the error, unlike Kahan's algorithm which keeps O(1) space.
-	// The tradeoff is that this is fully precise, but Kahan's algorithm
-	// is almost always precise anyways. It is about 12x slower
-	// than the naive implementation, but in turn about 10x faster than calculating
-	// the sum to full precision and then truncating.
+	/** Numerically precise implementation of sum
+	 * Optimized version of an implementation of Schewchuk's algorithm
+	 * which keeps full precision by keeping O(n) space
+	 * for the error, unlike Kahan's algorithm which keeps O(1) space.
+	 * The tradeoff is that this is fully precise, but Kahan's algorithm
+	 * is almost always precise anyways. It is about 12x slower
+	 * than the naive implementation, but in turn about 10x faster than calculating
+	 * the sum to full precision and then truncating.
+	 * @param values
+	 * @return Sum of the values
+	 */
 	public final static double sumSlow(double... values)
 	{
 		final double[] partials = new double[values.length];
@@ -393,9 +450,14 @@ public final class MathUtils {
 		MathUtils.time = new_time;
 	}
 
-	// returns newly allocated array of length len
-	// whose elements are doubles uniformaly distributed between 0.0 and 1.0
-	// generated by MathUtils.random()
+	/**
+	 * returns newly allocated array of length len
+	 * whose elements are doubles uniformaly distributed between 0.0 and 1.0
+	 * generated by {@link MathUtils#random()}
+	 * @param len
+	 * @return
+	 * Side Effects: none
+	 */
 	public static final double[] random(final int len)
 	{
 		final double ret[] = new double[len];
@@ -441,6 +503,13 @@ public final class MathUtils {
 	}
 	*/
 
+	/**
+	 * Copies the sign of sign into magnitude.
+	 * Faster than OpenJDK implementation.
+	 * @param magnitude
+	 * @param sign
+	 * @return
+	 */
 	public static double copySign(final double magnitude, final double sign)
 	{
 		final long m = Double.doubleToLongBits(magnitude);
@@ -449,38 +518,66 @@ public final class MathUtils {
 			return -magnitude;
 		return magnitude; // flip sign
 	}
+	/**
+	 * Returns the absolute value of d (without branching).
+	 * Faster than OpenJDK implementation.
+	 * @param d
+	 * @return
+	 */
 	public static final double abs(final double d)
 	{
 		return Double.longBitsToDouble(Long.MAX_VALUE & Double.doubleToRawLongBits(d));
 	}
+	/**
+	 * Returns the absolute value of f (without branching).
+	 * Faster than OpenJDK implementation.
+	 * @param f
+	 * @return
+	 */
 	public static final float abs(final float f)
 	{
 		return Float.intBitsToFloat(Integer.MAX_VALUE & Float.floatToRawIntBits(f));
 	}
+	/**
+	 * Returns the absolute value of l (without branching).
+	 * Faster than OpenJDK implementation.
+	 * @param l
+	 * @return
+	 */
 	public static final long abs(final long l)
 	{
 		final long sign = l>>>63;
 		return (l^(~sign+1)) + sign;
 	}
+	/**
+	 * Returns the absolute value of i (without branching).
+	 * Faster than OpenJDK implementation.
+	 * @param d
+	 * @return
+	 */
 	public static final int abs(final int i)
 	{
 		final int sign = i>>>31;
 		return (i^(~sign+1)) + sign;
 	}
 
-	// Implementation of sum which is both more numerically
-	// stable _and faster_ than the naive implementation
-	// which is used in all standard numerical libraries I know of:
-	// Colt, OpenGamma, Apache Commons Math, EJML.
-	//
-	// Implementation uses Kahan's algorithm keeping a running error
-	// along with the accumulator to try to cancel out the error at the end.
-	// This is much faster than Schewchuk's algorithm but not
-	// guaranteed to be perfectly precise
-	// In most cases, however, it is just as precise. A bound on error is given on Wikipedia.
-	// and is within 2ulp for sums where the number of terms is smaller than the order of 2^52.
-	// Due to optimization it is about 30% faster
-	// than the naive implementation on my machine.
+	/**
+	 * Implementation of sum which is both more numerically
+	 * stable _and faster_ than the naive implementation
+	 * which is used in all standard numerical libraries I know of:
+	 * Colt, OpenGamma, Apache Commons Math, EJML.
+	 *
+	 * Implementation uses variant of Kahan's algorithm keeping a running error
+	 * along with the accumulator to try to cancel out the error at the end.
+	 * This is much faster than Schewchuk's algorithm but not
+	 * guaranteed to be perfectly precise
+	 * In most cases, however, it is just as precise.
+	 * Due to optimization it is about 30% faster
+	 * even than the naive implementation on my machine.
+	 * @param values
+	 * @return
+	 * Side Effects: none
+	 */
 	public static final double sum(final double... values)
 	{
 		double sum = 0;
@@ -523,14 +620,19 @@ public final class MathUtils {
 		return ret;
 	}
 
-	// Numerically naive implementation of sum which is faster than MathUtils.sum() and sumNaive()
-	// Generally exhibits rounding error which grows with the length of the sum
-	// Note that it may not agree with other implementations
-	// due to optimizations which change the order of iteration
-	// which can affect the rounding error.
-	// It is O(n) in the length of the array to be summed.
-	// It is faster than the naive, unoptimized implementation by 20-40%
-	// (dependent on the mood of the JIT) on my machine.
+	/**
+	 * Numerically naive implementation of sum which is faster than MathUtils.sum() and sumNaive()
+	 * Generally exhibits rounding error which grows with the length of the sum
+	 * Note that it may not agree with other implementations
+	 * due to optimizations which change the order of iteration
+	 * which can affect the rounding error.
+	 * It is O(n) in the length of the array to be summed.
+	 * It is faster than the naive, unoptimized implementation by 20-40%
+	 * (dependent on the mood of the JIT) on my machine.
+	 * @param values
+	 * @return
+	 * Side Effects: none
+	 */
 	public static final double sumFast(final double... values)
 	{
 		double ret = 0;
@@ -564,6 +666,10 @@ public final class MathUtils {
 		return sum(values)==sumSlow(values);
 	}
 
+	/**
+	 * Prints out the array in the format "[1.0, 2.0, 3.0]"
+	 * @param d
+	 */
 	public final static void printArray(double[] d)
 	{
 		System.out.print("[");
@@ -584,8 +690,12 @@ public final class MathUtils {
 		System.out.println("Precision:"+precision(diff));
 	}
 
-	// Returns the number of bits required to represent d
-	// by counting the number of trailing zeros in the mantissa.
+	/**
+	 *  Returns the number of bits required to represent the mantissa of d
+	 * by counting the number of trailing zeros in the mantissa.
+	 * @param d
+	 * @return
+	 */
 	public static final int precision(final double d)
 	{
 		final long l = Double.doubleToLongBits(d);
@@ -608,11 +718,22 @@ public final class MathUtils {
 		return ret.doubleValue();
 	}
 
-	// Numerically precise dot product. Keeps a running error along with the
-	// accumulator. Equivalent to MathUtils.sum(MathUtils.multiply(x,y))
-	// but much faster and with O(1) memory overhead.
-	// O(n) with O(1) space.
-	// Even faster than the naive implementation ;).
+	/**
+	 * Numerically precise dot product. Keeps a running error along with the
+	 * accumulator. Equivalent to MathUtils.sum(MathUtils.multiply(x,y))
+	 * but much faster and with O(1) memory overhead.
+	 * O(n) with O(1) space.
+	 * Even faster than the naive implementation ;).
+	 * @param x Reference to first array
+	 * @param y Reference to second array
+	 * @param startOne Offset from beginning of first array
+	 * @param startTwo Offset from beginning of second array
+	 * @param len Number of terms to combine
+	 * @throws ArrayIndexOutOfBoundsException if the input indices don't make sense
+	 * (in particular, if startOne + len > x.length || startTwo + len > y.length)
+	 * @return ddot(x,y)
+	 * Side Effects: none
+	 */
 	public static final double linearCombination(final double[]x, final double[]y, final int startOne, final int startTwo, final int len)
 	{
 		//if (true) return MathUtils.sum(MathUtils.multiply(x,y));
@@ -628,6 +749,7 @@ public final class MathUtils {
 		int i = 0;
 		int xPtr = startOne;
 		int yPtr = startTwo;
+		// hopefully the cpu will pipeline all of these things
 		for (; i < len_down; i+= unroll,xPtr+=unroll,yPtr+=unroll)
 		{
 			// this line depends on unroll variable.
@@ -651,6 +773,13 @@ public final class MathUtils {
 		return sum;
 	}
 
+	/**
+	 * Calls {@link MathUtils#linearCombination(x,y,0,0,x.length)}
+	 * @param x
+	 * @param y
+	 * @throws ArrayIndexOutOfBoundsException if x and y have unequal length
+	 * @return
+	 */
 	public static final double linearCombination(final double[]x, final double[] y)
 	{
 		if (x.length!=y.length)
@@ -658,11 +787,21 @@ public final class MathUtils {
 		return linearCombination(x,y,0,0,x.length);
 	}
 
+	/**
+	 * Returns x*x, or x_1^2 + x_2^2 .., the Euclidean norm squared.
+	 * @param x
+	 * @return
+	 */
 	public static final double normSquared(final double[]x)
 	{
 		return linearCombination(x,x);
 	}
 
+	/**
+	 * Returns sqrt(x*x), the Euclidean norm.
+	 * @param x
+	 * @return
+	 */
 	public static final double norm(final double[] x)
 	{
 		return Math.sqrt(normSquared(x));
@@ -781,6 +920,14 @@ public final class MathUtils {
 	}
 
 	// TODO refactor to use DoubleMatrix2D.ptr()
+	/**
+	 * Returns the numerically precise result of multiplying matrix 1 by matrix 2.
+	 * Faster than any other Java matrix multiplication I know of.
+	 * @param first
+	 * @param second
+	 * @return
+	 * Side Effects: Allocation of new matrix
+	 */
 	public static final DoubleMatrix2D matrixMultiply(final DoubleMatrix2D first, final DoubleMatrix2D second)
 	{
 		if (first.cols()!=second.rows())
@@ -801,6 +948,13 @@ public final class MathUtils {
 		return ret;
 	}
 
+	/**
+	 * Fast matrix multiply, at the expense of numerical precision.
+	 * @param first
+	 * @param second
+	 * @return
+	 * Side Effects: Allocation of new matrix
+	 */
 	public static final DoubleMatrix2D matrixMultiplyFast(final DoubleMatrix2D first, final DoubleMatrix2D second)
 	{
 		final DoubleMatrix2D ret = new DoubleMatrix2D(first.rows(), second.cols());
@@ -808,6 +962,16 @@ public final class MathUtils {
 	}
 
 	// TODO refactor to use DoubleMatrix2D.ptr()
+	/**
+	 * Fast matrix multiply, at the expense of numerical precision.
+	 * This method will overwrite the contents of ret and return it.
+	 * @param first
+	 * @param second
+	 * @param ret
+	 * @param sanity_check Perform array index sanity checks and whatnot
+	 * @return ret
+	 * Side Effects: Overwriting of contents of ret.
+	 */
 	public static final DoubleMatrix2D matrixMultiplyFast(final DoubleMatrix2D first, final DoubleMatrix2D second, final DoubleMatrix2D ret, final boolean sanity_check)
 	{
 		if (sanity_check)
@@ -847,6 +1011,12 @@ public final class MathUtils {
 		return ret;
 	}
 
+	/**
+	 * Returns the i'th column of matrix as an array.
+	 * @param matrix
+	 * @param col
+	 * @return
+	 */
 	public static final double[] extractColumn(final double[][] matrix, final int col)
 	{
 		final double[] ret = new double[matrix[0].length];
@@ -1026,16 +1196,22 @@ public final class MathUtils {
 		return Math.sqrt(sum(pow(subtract(p,q),2)));
 	}
 
-	// Returns a double with the exponent and sign set to zero.
-	// (Actually it sets the exponent to 1023,
-	// which is the IEEE 754 exponent bias).
+	/**
+	 * Returns a double with the exponent and sign set to zero.
+	 * @param d
+	 * @return
+	 */
 	static final double mantissa(final double d)
 	{
 		return abs(Math.scalb(d,-Math.getExponent(d)));
 	}
 
-	// Allocates new array which is reverse of the argument.
-	// No side effects.
+	/**
+	 * Returns new array which is reverse of the argument.
+	 * @param data
+	 * @return
+	 * Side Effects: none
+	 */
 	public static final double[] reverse(final double[] data)
 	{
 		final double[] ret = new double[data.length];
@@ -1050,9 +1226,14 @@ public final class MathUtils {
 		return ret;
 	}
 
-	// Allocates new array which is sorted version of argument.
-	// O(n) in the allocation and then O(n log n) in the sort.
-	// Behavior should be identical to calling Arrays.sort(data.clone())
+	/**
+	 * Allocates new array which is sorted version of argument.
+	 * O(n) in the allocation and then O(n log n) in the sort.
+	 * Behavior should be identical to calling Arrays.sort(data.clone())
+	 * @param data
+	 * @return
+	 * Side Effects: none
+	 */
 	public static final double[] sort(final double[] data)
 	{
 		final double ret[] = copyOf(data);
@@ -1060,15 +1241,23 @@ public final class MathUtils {
 		return ret;
 	}
 
-	// Behavior is identical to calling data.clone() or Arrays.copyOf(data)
-	// But can be up to 30% faster if the JIT doesn't optimize those functions
+	/**
+	 * Behavior is identical to calling data.clone() or Arrays.copyOf(data)
+	 * But can be up to 30% faster if the JIT doesn't optimize those functions
+	 * @param data
+	 * @return
+	 */
 	public static final double[] copyOf(final double[] data)
 	{
 		return copyOfRange(data,0,data.length);
 	}
 
-	// Behavior is identical to calling Arrays.copyOfRange(data,start,end)
-	// But can be faster if JIT doesn't optimize Arrays.copyOfRange
+	/**
+	 * Behavior is identical to calling data.clone() or Arrays.copyOf(data)
+	 * But can be up to 30% faster if the JIT doesn't optimize those functions
+	 * @param data
+	 * @return
+	 */
 	public static final double[] copyOfRange(final double[]data, final int start, final int end)
 	{
 		if (end > data.length || start < 0)
@@ -1087,8 +1276,14 @@ public final class MathUtils {
 		return ret;
 	}
 
-	// Returns true if all the elements of the two arrays are equal
-	// Throws NullPointerException if either x or y are null.
+	/**
+	 * Returns true if two arrays have same length
+	 * and all the elements of the two arrays are equal
+	 * @param x
+	 * @param y
+	 * @throws NullPointerException if either x or y are null.
+	 * @return
+	 */
 	public static final boolean equals(final double[]x, final double[]y)
 	{
 		final int len = x.length;
@@ -1142,6 +1337,11 @@ public final class MathUtils {
 		return true;
 	}
 
+	/**
+	 * Test that matrixMultiplyStrassen gives same results as matrixMultiply
+	 * @param one
+	 * @param two
+	 */
 	final static void testMatrixMultiply(final DoubleMatrix2D one, final DoubleMatrix2D two)
 	{
 		final DoubleMatrix2D resultOne = matrixMultiplyStrassen(one,two);
@@ -1150,6 +1350,12 @@ public final class MathUtils {
 			if ( (float)resultOne.data()[i] != (float)resultTwo.data()[i])
 				throw new RuntimeException("i:"+i);
 	}
+	/**
+	 * Tests matrixMultiply by checking
+	 * that both left and right multiplication
+	 * of a randomly generated two by two matrix with the identity
+	 * returns the same matrix.
+	 */
 	final static void testMatrixMultiply()
 	{
 		final DoubleMatrix2D a = DoubleMatrix2D.identity(2);
@@ -1160,6 +1366,12 @@ public final class MathUtils {
 			throw new RuntimeException("Failed matrixMultiply");
 		System.out.println("passed matrixMultiply");
 	}
+	/**
+	 * Tests matrixMultiplyFast by checking
+	 * that both left and right multiplication
+	 * of a randomly generated two by two matrix with the identity
+	 * returns the same matrix.
+	 */
 	final static void testMatrixMultiplyFast()
 	{
 		final DoubleMatrix2D a = DoubleMatrix2D.identity(2);
@@ -1170,6 +1382,12 @@ public final class MathUtils {
 			throw new RuntimeException("Failed matrixMultiplyFast");
 		System.out.println("passed matrixMultiplyFast");
 	}
+	/**
+	 * Tests matrixMultiplyStrassen by checking
+	 * that both left and right multiplication
+	 * of a randomly generated two by two matrix with the identity
+	 * returns the same matrix.
+	 */
 	final static void testMatrixMultiplyStrassen()
 	{
 		final DoubleMatrix2D a = DoubleMatrix2D.identity(2);
@@ -1180,6 +1398,10 @@ public final class MathUtils {
 			throw new RuntimeException("Failed matrixMultiplyStrassen");
 		System.out.println("passed matrixMultiplyStrassen");
 	}
+	/**
+	 * Tests linearCombination and linearCombinationFast
+	 * by checking that [1,1,1,1] * [1,1,1,1] == 4.
+	 */
 	final static void testLinearCombination()
 	{
 		final double[] one = new double[]{1,1,1,1};
@@ -1190,6 +1412,9 @@ public final class MathUtils {
 			throw new RuntimeException("linearCombinationFast Test Failed!");
 		System.out.println("passed linearCombination");
 	}
+	/**
+	 * Test addition and subtraction of matrices
+	 */
 	final static void testAddSubtract()
 	{
 		DoubleMatrix2D test = DoubleMatrix2D.random(32,32);
