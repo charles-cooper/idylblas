@@ -242,14 +242,17 @@ Note: Matrix shape conformance is checked <i>after</i> potential transpositions.
 	    	for(int i = 0; i < y.length; i++){
 	    	 y.set(i, beta*y.get(i));
 	    	}
-	    	for(int i = 0; i < A.cols(); i++){
-	    	  for(int j = 0; j < A.rows(); j++){
-	    		y.set(j, (y.get(j)+ alpha*A.getPtrAndIncrementRow()));
+	    	for(int i = 0; i < A.rows(); i++){
+	    	  for(int j = 0; j < A.cols(); j++){
+	    		y.set(j, (y.get(j)+ alpha*x.get(j)*A.get()));
+	    		A.incrementColumn();
 	    	  }
 	    	  A.resetPtr();
+	    	 
 	    	  for(int k = 0; k < i; k++){
-	    	  A.incrementColumn();
+	    	  A.incrementRow();
 	    	  }
+	    	  System.out.println(A.ptr());
 	        }
 	    }
 	}
@@ -384,18 +387,23 @@ A = { {9,9}, {13,14} }
 
 	public static void main(String[] args){
     System.out.println("hello!");
-    double testdata[] = {1,2,3,4,5,6,7,8,9};
-    double testdataz[] = {0,0,0,0,0,0,0,0,0};
-    
-    DoubleMatrix2D test = new DoubleMatrix2D(testdata, 3, 3);
-    DoubleMatrix2D test2 = new DoubleMatrix2D(testdata, 3, 3);
-    DoubleMatrix2D test3 = new DoubleMatrix2D(testdataz, 3, 3);
-    dgemm(true,true, 1, test, test2, 1, test3);
+    double testdata[] = {1,1,0}; 
+    double testdataz[] = {1,1,1,1,1,1,1,1,1};
+    double testdatax[] = {0,0,0};
     
     
     
-	for(int i = 0; i < test3.rows(); i++){
-		MathUtils.printArray(test3.extractRow(i));
+    DoubleMatrix1D test = new DoubleMatrix1D(testdata); 
+    DoubleMatrix2D test2 = new DoubleMatrix2D(testdataz, 3, 3);
+    DoubleMatrix1D test3 = new DoubleMatrix1D(testdatax );
+    
+    
+    dgemv(false,1, test2, test, 1, test3);
+    
+    
+    
+	for(int i = 0; i < test3.length; i++){
+		System.out.println(test3.get(i));
 	}
 	}
 }
