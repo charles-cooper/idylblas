@@ -69,7 +69,7 @@ public class DoubleMatrix2D
 		this.data = new double[rows*cols];
 	}
 	// square matrix construction. does not copy the array.
-	DoubleMatrix2D(final double data[],final int real_rows, final int real_cols, final int rows,final int cols,final int row_offset, final int col_offset)
+	public DoubleMatrix2D(final double data[],final int real_rows, final int real_cols, final int rows,final int cols,final int row_offset, final int col_offset)
 	{
 		this.rows = rows; this.cols = cols;
 		this.real_rows = real_rows; this.real_cols = real_cols;
@@ -81,7 +81,7 @@ public class DoubleMatrix2D
 			*/
 		this.data = data;
 	}
-	DoubleMatrix2D(final double data[], final int rows, final int cols)
+	public DoubleMatrix2D(final double data[], final int rows, final int cols)
 	{
 		this(data,rows,cols,rows,cols,0,0);
 	}
@@ -374,6 +374,6 @@ public class DoubleMatrix2D
 			ret[i] = data[idx];
 		}
 		return ret;
-	}
+	}	
 }
 

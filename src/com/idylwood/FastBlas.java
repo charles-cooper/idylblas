@@ -231,8 +231,27 @@ Note: Matrix shape conformance is checked <i>after</i> potential transpositions.
 
 @throws IllegalArgumentException <tt>A.columns() != x.size() || A.rows() != y.size())</tt>..
 	 */
-	public void dgemv(boolean transposeA, double alpha, DoubleMatrix2D A, DoubleMatrix1D x, double beta, DoubleMatrix1D y){
-		
+	public static void dgemv(boolean transposeA, double alpha, DoubleMatrix2D A, DoubleMatrix1D x, double beta, DoubleMatrix1D y){
+		if(transposeA == true){
+			A = MathUtils.transpose(A);
+		}
+		if(A.cols() != x.length || A.rows() != y.length){
+			throw new IllegalArgumentException 
+			("Bad dimensions.");}
+	    else{
+	    	for(int i = 0; i < y.length; i++){
+	    	 y.set(i, beta*y.get(i));
+	    	}
+	    	for(int i = 0; i < A.cols(); i++){
+	    	  for(int j = 0; j < A.rows(); j++){
+	    		y.set(j, (y.get(j)+ alpha*A.getPtrAndIncrementRow()));
+	    	  }
+	    	  A.resetPtr();
+	    	  for(int k = 0; k < i; k++){
+	    	  A.incrementColumn();
+	    	  }
+	        }
+	    }
 	}
 	/**
 	  Performs a rank 1 update; <tt>A = A + alpha*x*y'</tt>.
@@ -372,6 +391,9 @@ A = { {9,9}, {13,14} }
     DoubleMatrix2D test2 = new DoubleMatrix2D(testdata, 3, 3);
     DoubleMatrix2D test3 = new DoubleMatrix2D(testdataz, 3, 3);
     dgemm(true,true, 1, test, test2, 1, test3);
+    
+    
+    
 	for(int i = 0; i < test3.rows(); i++){
 		MathUtils.printArray(test3.extractRow(i));
 	}
