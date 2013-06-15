@@ -1437,6 +1437,23 @@ public final class MathUtils {
 			throw new RuntimeException("addSubtractTest Failed!");
 		System.out.println("passed addSubtract");
 	}
+	public static final DoubleMatrix2D transpose(DoubleMatrix2D A){
+		  DoubleMatrix2D AT = new DoubleMatrix2D(A.cols(),A.rows());
+		  for(int i = 0; i < A.rows(); i++){
+			  double temp[] = new double[A.rows()];
+			  for(int k = 0; k < temp.length; k++){
+			 
+			    temp[k] = A.extractColumn(i)[k];
+			  }
+			  for(int j = 0; j < temp.length; j++){
+				  AT.set(temp[j]);
+				  AT.incrementColumn();
+			  }
+		
+		  }
+		  AT.resetPtr();
+		  return AT; 
+	}
 
 	public static void main(String[] args)
 	{
