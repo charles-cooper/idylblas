@@ -269,8 +269,14 @@ A = { {9,9}, {13,14} }
 @param y an n element vector.
 @param A an m by n matrix.
 	 */
-	public void dger(double alpha, DoubleMatrix1D x, DoubleMatrix1D y, DoubleMatrix2D A){
-		
+	public static void dger(double alpha, DoubleMatrix1D x, DoubleMatrix1D y, DoubleMatrix2D A){
+		for(int j = 0; j < y.length; j++){
+			for(int i = 0; i < x.length; i++){
+				A.set(A.get() + alpha*x.get(i)*y.get(j));
+				A.incrementColumn();
+			}
+		}
+		A.resetPtr();
 	}
 	/**
 	  Return the 2-norm; <tt>sqrt(x[0]^2 + x[1]^2 + ...)</tt>.
@@ -278,8 +284,13 @@ A = { {9,9}, {13,14} }
 
 	  @param x the vector.
 	 */
-	public double dnrm2(DoubleMatrix1D x){
-	return 0;
+	public static double dnrm2(DoubleMatrix1D x){
+		
+	   double num = 0; 
+     for(int i = 0; i < x.length ; i++){
+    	 num += x.get(i);
+     }
+     return num;
 	}
 	/**
 	  Applies a givens plane rotation to (x,y); <tt>x = c*x + s*y; y = c*y - s*x</tt>.
@@ -288,7 +299,7 @@ A = { {9,9}, {13,14} }
 	  @param c the cosine of the angle of rotation.
 	  @param s the sine of the angle of rotation.
 	 */
-	public void drot(DoubleMatrix1D x, DoubleMatrix1D y, double c, double s){
+	public static void drot(DoubleMatrix1D x, DoubleMatrix1D y, double c, double s){
 		
 	}
 	/**
@@ -300,7 +311,7 @@ A = { {9,9}, {13,14} }
 	  @param  b  rotational elimination parameter b.
 	  @param  rotvec[]  Must be at least of length 4. On output contains the values <tt>{a,b,c,s}</tt>.
 	 */
-	public void drotg(double a, double b, double rotvec[]){
+	public static void drotg(double a, double b, double rotvec[]){
 		
 	}
 	/**
@@ -310,8 +321,10 @@ A = { {9,9}, {13,14} }
 	  @param alpha a scale factor.
 	  @param x the first vector.
 	 */
-	public void dscal(double alpha, DoubleMatrix1D x){
-		
+	public static void dscal(double alpha, DoubleMatrix1D x){
+		 for(int i = 0; i < x.length; i++){
+			 x.set(i, x.get(i)*alpha);
+		 }
 	}
 	/**
 	  Matrix scaling; <tt>A = alpha*A</tt>.
@@ -332,8 +345,13 @@ A = { {9,9}, {13,14} }
 
 	  @throws IllegalArgumentException <tt>x.size() != y.size()</tt>.
 	 */
-	public void dswap(DoubleMatrix1D x, DoubleMatrix1D y){
-		
+	public static void dswap(DoubleMatrix1D x, DoubleMatrix1D y){
+		double holder = 0;
+		for (int i = 0; i < x.length; i++){
+			holder = y.get(i);
+			y.set(i, x.get(i));
+			x.set(i, holder);
+		}
 	}
 	/**
 	  Swaps the elements of two matrices; <tt>B <==> A</tt>.
@@ -343,8 +361,17 @@ A = { {9,9}, {13,14} }
 
 	  @throws IllegalArgumentException if <tt>A.columns() != B.columns() || A.rows() != B.rows()</tt>.
 	 */
-	public void dswap(DoubleMatrix2D x, DoubleMatrix2D y){
-		
+	public static void dswap(DoubleMatrix2D x, DoubleMatrix2D y){
+		double holder = 0;
+		for (int i = 0; i < x.rows()*x.cols(); i++){
+			holder = y.get();
+			y.set(x.get()); 
+			x.set(holder);
+			x.incrementColumn();
+			y.incrementColumn();
+		}
+		x.resetPtr();
+		y.resetPtr();
 	}
 	/**
 	  Symmetric matrix-vector multiplication; <tt>y = alpha*A*x + beta*y</tt>.
@@ -381,8 +408,16 @@ A = { {9,9}, {13,14} }
 	  @param x the vector to search through.
 	  @return the index of largest absolute value (-1 if x is empty).
 	 */
-	public int idamax(DoubleMatrix1D x){
-	return 0;
+	public static int idamax(DoubleMatrix1D x){
+	double check = MathUtils.abs(x.get(0));
+	int idx = 0; 
+	  for (int i = 0; i < x.length; i++){
+		if(MathUtils.abs(x.get(i)) > check){
+			check = MathUtils.abs(x.get(i));
+			idx = i;
+		}
+	  }
+	  return idx; 
 	}
 
 	public static void main(String[] args){
