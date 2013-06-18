@@ -1,3 +1,4 @@
+package com.idylwood.utils;
 
 public class MicroBenchmark
 {

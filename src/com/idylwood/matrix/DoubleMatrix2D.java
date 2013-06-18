@@ -46,6 +46,10 @@ public class DoubleMatrix2D
 		private int row;
 		private int col;
 		private final DoubleMatrix2D parent() { return DoubleMatrix2D.this; }
+		public Pointer()
+		{
+			set(0,0);
+		}
 
 		// TODO decide if this goes in public API
 		public void set(final int row, final int col)
@@ -88,6 +92,25 @@ public class DoubleMatrix2D
 		public int index()
 		{
 			return idx;
+		}
+		public boolean hasNext()
+		{
+			if (row < parent().rows())
+				return true;
+			if (col < parent().cols())
+				return true;
+			return false;
+		}
+		// Not sure if this is such a good idea but if
+		// the cpu has a reasonably good branch predictor it should be fast.
+		public void increment()
+		{
+			incrementColumn();
+			if (col==parent().cols())
+			{
+				incrementRow();
+				resetColumns();
+			}
 		}
 		public void incrementColumn()
 		{

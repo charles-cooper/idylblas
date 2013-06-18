@@ -11,8 +11,6 @@
 // TODO change the javadoc so copyright restriction is lifted
 package com.idylwood;
 
-//import cern.colt.matrix.DoubleMatrix1D;
-//import cern.colt.matrix.DoubleMatrix2D;
 import com.idylwood.matrix.DoubleMatrix1D;
 import com.idylwood.matrix.DoubleMatrix2D;
 /**
