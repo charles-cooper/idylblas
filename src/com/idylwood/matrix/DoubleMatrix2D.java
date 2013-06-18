@@ -40,6 +40,82 @@ import com.idylwood.utils.MathUtils;
 // TODO experiment with block recursive storage.
 public class DoubleMatrix2D
 {
+	public class Pointer
+	{
+		private int idx;
+		private int row;
+		private int col;
+		private final DoubleMatrix2D parent() { return DoubleMatrix2D.this; }
+
+		// TODO decide if this goes in public API
+		public void set(final int row, final int col)
+		{
+			idx = parent().index(row,col);
+			this.row = row;
+			this.col = col;
+		}
+		public void reset()
+		{
+			set(0,0);
+		}
+		public void setRow(final int row)
+		{
+			set(row,0);
+		}
+		public void setColumn(final int col)
+		{
+			set(0,col);
+		}
+		public double getValue()
+		{
+			return parent().data[idx];
+		}
+		public void setValue(final double val)
+		{
+			parent().data[idx] = val;
+		}
+		/**
+		 * Sets to param val and returns the old value
+		 * @param val
+		 * @return old value at idx
+		 */
+		public double getAndSetValue(final double val)
+		{
+			final double ret = getValue();
+			parent().data[idx] = val;
+			return ret;
+		}
+		public int index()
+		{
+			return idx;
+		}
+		public void incrementColumn()
+		{
+			++idx;
+			++col;
+		}
+		/** Increments the row and returns new idx */
+		public int incrementRow()
+		{
+			idx += parent().real_cols;
+			++row;
+			return idx;
+		}
+		/** Sets column to zero */
+		public void resetColumns()
+		{
+			idx -= col;
+			col = 0;
+		}
+		/** Sets row to zero */
+		public void resetRows()
+		{
+			idx -= row * parent().real_cols;
+			row = 0;
+		}
+		public int currentRow() { return row; }
+		public int currentColumn() { return col; }
+	}
 	private final double[] data;
 	private final int rows;
 	private final int cols;

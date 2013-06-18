@@ -891,17 +891,17 @@ public final class MathUtils {
 		}
 
 		int idx = 0;
-		int idx2 = ret.index(0,0);
+		int ret_idx = ret.index(0,0);
+		ret.resetPtr();
 		for (int i = 0; i < m; i++)
 		{
-			for (int j = 0; j < m; j++,idx++,idx2++) // try to help it pipeline the instructions
+			for (int j = 0; j < m; j++,idx++,ret_idx++) // try to help it pipeline the instructions
 			{
 				// fracking pointer arithmetic
-				// TODO refactor to use DoubleMatrix2D.ptr()
-				final int idx11 = idx2;
-				final int idx12 = idx2 + m;
-				final int idx21 = idx2 + m*n;
-				final int idx22 = idx2 + m*n + m;
+				final int idx11 = ret_idx;
+				final int idx12 = ret_idx + m;
+				final int idx21 = ret_idx + m*n;
+				final int idx22 = ret_idx + m*n + m;
 				ret.data()[idx11] = m1.data()[idx] + m4.data()[idx] - m5.data()[idx] + m7.data()[idx]; // C11
 				ret.data()[idx12] = m3.data()[idx] + m5.data()[idx]; // C12
 				ret.data()[idx21] = m2.data()[idx] + m4.data()[idx]; // C21
@@ -909,9 +909,9 @@ public final class MathUtils {
 			}
 			// since idx2 is going to be m more from where it was at the beginning of this iteration
 			// and we want it to be n more.
-			idx2+=m;
+			ret_idx+=m;
 		}
-		return ;
+		return;
 	}
 
 	static final boolean isPowerOfTwo(final int i)
@@ -983,30 +983,22 @@ public final class MathUtils {
 		}
 		int first_idx = first.index(0,0);
 		int ret_idx = ret.index(0,0);
-		for (int i = 0; i < second.cols(); i++,ret_idx-=ret.rows()*ret.real_row_size()-1,first_idx-=first.rows()*first.real_row_size())
+		// iterate over second cols then first rows.
+		for (int i = 0; i < second.cols(); i++)
 		{
 			// extract the column beforehand to improve cache hits
 			final double vector[] = second.extractColumn(i);
-			// unroll the loop, since the JIT doesn't seem to want to do so.
-			// in general i am guessing that if there is a cache miss on write
-			// that is because the matrix is so big that the linear combination
-			// will fill up the cache with other stuff anyways
-			int j = 0;
-			for (; j < first.rows()/2; j++,ret_idx+=ret.real_row_size()<<1,first_idx+=first.real_row_size()<<1)
+			for (int j = 0; j < first.rows(); j++,ret_idx+=ret.real_row_size(),first_idx+=first.real_row_size())
 			{
 				// if (first_idx!=first.index(j,0)) throw new RuntimeException("You have bug!");
 				// if (ret_idx!=ret.index(j,i)) throw new RuntimeException("You have bug!");
 				ret.data()[ret_idx]
 					= linearCombinationFast(first.data(), vector, first_idx, 0, first.cols());
-				ret.data()[ret_idx + ret.real_row_size()]
-					= linearCombinationFast(first.data(),vector,first_idx+first.real_row_size(),0,first.cols());
 			}
 			// extra stuff
-			if (0!=(first.rows()&1))
-			{
-				ret.data()[ret_idx]
-					= linearCombinationFast(first.data(), vector, first_idx, 0, first.cols());
-			}
+			// idxes are too far so push them back
+			ret_idx-=ret.rows()*ret.real_row_size()-1;
+			first_idx-=first.rows()*first.real_row_size();
 		}
 		return ret;
 	}
@@ -1132,7 +1124,7 @@ public final class MathUtils {
 	public static final double[] matrixMultiplyFast(final DoubleMatrix2D matrix, final double[] vector)
 	{
 		final double []ret = new double[matrix.rows()];
-		for (int i = 0; i < matrix.rows(); i++)
+		for (int i = 0; i < ret.length; i++)
 		{
 			ret[i] = linearCombinationFast(matrix.data(),vector,matrix.index(i,0),0,matrix.cols());
 		}
@@ -1142,7 +1134,7 @@ public final class MathUtils {
 	public static final double[] matrixMultiply(final DoubleMatrix2D matrix, final double[] vector)
 	{
 		final double ret[] = new double[matrix.rows()];
-		for (int i = 0; i < matrix.rows(); i++)
+		for (int i = 0; i < ret.length; i++)
 		{
 			ret[i] = linearCombination(matrix.data(),vector,matrix.index(i,0),0,matrix.cols());
 		}
@@ -1440,17 +1432,7 @@ public final class MathUtils {
 
 	public static void main(String[] args)
 	{
-		/*
-		logTime("start");
-		final int len = 1000*1000*100;
-		final double[] x = random(len);
-		final double[] y = random(len);
-		for (int i = 0; i < 5; i++)
-			linearCombinationFast(x,y);
-		logTime("warmed up");
-		linearCombinationFast(x,y);
-		logTime("done");
-		if (true) return;
+		final int len = 1024;
 		logTime("start");
 		testAddSubtract();
 		testLinearCombination();
@@ -1463,19 +1445,19 @@ public final class MathUtils {
 //		final DoubleMatrix2D one = DoubleMatrix2D.diagonal(new double[]{1,2,1,1});
 //		final DoubleMatrix2D two = DoubleMatrix2D.diagonal(new double[]{2,1,1,1});
 		DoubleMatrix2D foo = null;
-		testMatrixMultiply(one,two); System.out.println("passed");
+		testMatrixMultiply(one,two);
+		System.out.println("passed");
 		logTime("one");
-		for (int i = 0; i < 5; i++)
-			foo = matrixMultiplyStrassen(one,two);
+		for (int i = 0; i < 2; i++)
+			foo = matrixMultiplyFast(one,two);
 		logTime("Warmed up");
-		for (int i = 0; i < 1000; i++)
-			foo = matrixMultiplyStrassen(two,one);
+		for (int i = 0; i < 5; i++)
+			foo = matrixMultiplyFast(two,one);
 		logTime("done");
 
 		if (true) return;
-		*/
+
 		logTime("start");
-		final int len = 1000*1000*10;
 		final double[] data = shift(random(len),-.5);
 		logTime("random");
 		double fast,medium,slow;
