@@ -1441,10 +1441,11 @@ public final class MathUtils {
 		  DoubleMatrix2D AT = new DoubleMatrix2D(A.cols(),A.rows());
 		  for(int i = 0; i < A.rows(); i++){
 			  double temp[] = new double[A.rows()];
-			  for(int k = 0; k < temp.length; k++){
+			  
+			  //for(int k = 0; k < temp.length; k++){
 			 
-			    temp[k] = A.extractColumn(i)[k];
-			  }
+			    temp = A.extractColumn(i);
+			//  }
 			  for(int j = 0; j < temp.length; j++){
 				  AT.set(temp[j]);
 				  AT.incrementColumn();
