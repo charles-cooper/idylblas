@@ -89,7 +89,7 @@ public class DoubleMatrix2D
 			parent().data[idx] = val;
 			return ret;
 		}
-		public int index()
+		public int getIndex()
 		{
 			return idx;
 		}
@@ -146,7 +146,6 @@ public class DoubleMatrix2D
 	private final int real_cols;
 	private final int row_offset;
 	private final int col_offset;
-	private int ptr;
 	public DoubleMatrix2D(final double[][] data)
 	{
 		this(data.length,data[0].length);
@@ -168,7 +167,7 @@ public class DoubleMatrix2D
 		this.data = new double[rows*cols];
 	}
 	// square matrix construction. does not copy the array.
-	public DoubleMatrix2D(final double data[],final int real_rows, final int real_cols, final int rows,final int cols,final int row_offset, final int col_offset)
+	DoubleMatrix2D(final double data[],final int real_rows, final int real_cols, final int rows,final int cols,final int row_offset, final int col_offset)
 	{
 		this.rows = rows; this.cols = cols;
 		this.real_rows = real_rows; this.real_cols = real_cols;
@@ -180,7 +179,7 @@ public class DoubleMatrix2D
 			*/
 		this.data = data;
 	}
-	public DoubleMatrix2D(final double data[], final int rows, final int cols)
+	DoubleMatrix2D(final double data[], final int rows, final int cols)
 	{
 		this(data,rows,cols,rows,cols,0,0);
 	}
@@ -255,17 +254,17 @@ public class DoubleMatrix2D
 	public final DoubleMatrix2D copy()
 	{
 		final DoubleMatrix2D ret = new DoubleMatrix2D(this.rows,this.cols);
-		int idx = 0;
-		int idx2 = this.index(0,0);
-		for (int i = 0; i < rows; i++)
-		{
-			for (int j = 0; j < cols; j++,idx++,idx2++)
-				ret.data[idx] = this.data[idx2];
-
-			// idx2 has been incremented by cols, real_cols - cols left
-			idx2+=this.real_cols - this.cols;
-		}
+		copy(this,ret);
 		return ret;
+	}
+	public static final void copy(final DoubleMatrix2D src, final DoubleMatrix2D dest)
+	{
+		if (src.cols()!=dest.cols() || src.rows() != dest.rows())
+			throw new IllegalArgumentException("Arguments must be of same dimension!");
+		final Pointer dest_ptr = dest.new Pointer();
+		final Pointer src_ptr = src.new Pointer();
+		for (; src_ptr.hasNext(); src_ptr.incrementRow(), dest_ptr.incrementRow())
+			System.arraycopy(src.data, src_ptr.getIndex(), dest.data, dest_ptr.getIndex(), src.cols());
 	}
 	/** Calculates the index of a row and column in the underlying data structure.
 	 * For example for an ordinary matrix laid out in memory row by row,
@@ -289,16 +288,6 @@ public class DoubleMatrix2D
 		return data[index(row,col)];
 	}
 	/**
-	 * Equivalent to a call to <code>data()[this.ptr()]</code>.
-	 * Faster than <code>get(row,col)</code> since it doesn't have
-	 * to calculate <code>index(row,col)</code>
-	 * @return
-	 */
-	public final double get()
-	{
-		return data[ptr];
-	}
-	/**
 	 * Sets the entry at row, col with val.
 	 * @param row
 	 * @param col
@@ -319,75 +308,24 @@ public class DoubleMatrix2D
 		data[index(row,col)] += incr;
 	}
 	/**
-	 * Equivalent to a call to <code>data()[this.ptr()] = val</code>.
-	 * Faster than <code>set(row,col,val)</code> since it doesn't have
-	 * to calculate <code>index(row,col)</code>
-	 * @return
+	 * @return A new pointer
 	 */
-	public final void set(final double val)
+	public final Pointer ptr()
 	{
-		data[ptr] = val;
-	}
-	/**
-	 * Equivalent to <code>get();set(val);</code>
-	 * @return
-	 */
-	public final double getAndSet(final double val)
-	{
-		final double old_val = data[ptr];
-		data[ptr] = val;
-		return old_val;
-	}
-	/**
-	 * Returns an integer which is the pointer to the current index.
-	 * @return
-	 */
-	public final int ptr()
-	{
-		return ptr;
+		return new Pointer();
 	}
 	/**
 	 * Resets the ptr to index(0,0)
 	 * @return
 	 */
-	public final void resetPtr()
-	{
-		ptr = index(0,0);
-	}
-	public final void incrementRow()
-	{
-		ptr += this.real_cols;
-	}
-	public final void incrementColumn()
-	{
-		++ptr;
-	}
 	/**
 	 * Equivalent to calling ptr(); incrementRow()
 	 * @return
 	 */
-	public final int getPtrAndIncrementRow()
+	public final DoubleMatrix1D multiply(final DoubleMatrix1D arg)
 	{
-		int oldPtr = ptr;
-		ptr += this.real_cols;
-		return oldPtr;
-	}
-	/**
-	 * Equivalent to calling incrementRow(); ptr()
-	 * @return
-	 */
-	public final int incrementRowAndGetPtr()
-	{
-		ptr += this.real_cols;
-		return ptr;
-	}
-	public final int getPtrAndIncrementColumn()
-	{
-		return ptr++;
-	}
-	public final int incrementColumnAndGetPtr()
-	{
-		return ++ptr;
+		final double[] new_data = MathUtils.matrixMultiply(this, arg.data);
+		return new DoubleMatrix1D(new_data,false);
 	}
 	/**
 	 * Returns newly allocated matrix which is the result of summing this with other

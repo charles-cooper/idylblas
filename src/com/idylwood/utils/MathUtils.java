@@ -188,7 +188,7 @@ public final class MathUtils {
 	{
 		return new org.apache.commons.math3.stat.descriptive.moment.Variance().evaluate(values);
 	}
-	*/
+	 */
 
 	// Alternative implementation of variance. Not sure which one is more precise.
 	static public final double varianceTwo(final double [] values)
@@ -316,10 +316,10 @@ public final class MathUtils {
 	 */
 	final public static double meanArbitraryPrecision(final double data[])
 	{ BigDecimal mean = new BigDecimal(0);
-		for (double x : data)
-			mean = mean.add(new BigDecimal(x),MathContext.UNLIMITED);
-		mean = mean.divide(new BigDecimal(data.length),MathContext.UNLIMITED);
-		return mean.doubleValue();
+	for (double x : data)
+		mean = mean.add(new BigDecimal(x),MathContext.UNLIMITED);
+	mean = mean.divide(new BigDecimal(data.length),MathContext.UNLIMITED);
+	return mean.doubleValue();
 	}
 
 	// funnily enough, even though this uses BigDecimals,
@@ -441,15 +441,6 @@ public final class MathUtils {
 		return sum;
 	}
 
-	// debugger function, not really needed
-	private static long time = System.currentTimeMillis();
-	static void logTime(String msg)
-	{
-		final long new_time = System.currentTimeMillis();
-		System.out.println(msg+" "+(new_time-time));
-		MathUtils.time = new_time;
-	}
-
 	/**
 	 * returns newly allocated array of length len
 	 * whose elements are doubles uniformaly distributed between 0.0 and 1.0
@@ -501,7 +492,7 @@ public final class MathUtils {
 	{
 		return new org.apache.commons.math3.stat.descriptive.summary.Sum().evaluate(values);
 	}
-	*/
+	 */
 
 	/**
 	 * Copies the sign of sign into magnitude.
@@ -558,7 +549,7 @@ public final class MathUtils {
 	public static final int abs(final int i)
 	{
 		final int sign = i>>>31;
-		return (i^(~sign+1)) + sign;
+			return (i^(~sign+1)) + sign;
 	}
 
 	/**
@@ -592,8 +583,8 @@ public final class MathUtils {
 		for (; i < len; i+=unroll)
 		{
 			final double val = values[i] + values[i+1]
-				+ values[i+2] + values[i+3]
-				+ values[i+4] + values[i+5];
+					+ values[i+2] + values[i+3]
+							+ values[i+4] + values[i+5];
 			final double partial = val - err;
 			final double hi = sum + val;
 			err = (hi - sum) - partial;
@@ -755,8 +746,8 @@ public final class MathUtils {
 			// this line depends on unroll variable.
 			final double prod = x[xPtr]*y[yPtr]
 					+ x[xPtr+1]*y[yPtr+1]
-					+ x[xPtr+2]*y[yPtr+2]
-					+ x[xPtr+3]*y[yPtr+3];
+							+ x[xPtr+2]*y[yPtr+2]
+									+ x[xPtr+3]*y[yPtr+3];
 			final double partial = prod - err;
 			final double hi = sum + prod;
 			err = (hi - sum) - partial;
@@ -848,8 +839,8 @@ public final class MathUtils {
 		m5 = new DoubleMatrix2D(m,m); m6 = new DoubleMatrix2D(m,m);
 		m7 = new DoubleMatrix2D(m,m);
 		if (m > STRASSEN_IS_SLOWER) // otherwise strassen is faster
-		//if (false)
-		//if (true)
+			//if (false)
+			//if (true)
 		{
 			DoubleMatrix2D slot1 = new DoubleMatrix2D(m,m);
 			DoubleMatrix2D slot2 = new DoubleMatrix2D(m,m);
@@ -892,7 +883,6 @@ public final class MathUtils {
 
 		int idx = 0;
 		int ret_idx = ret.index(0,0);
-		ret.resetPtr();
 		for (int i = 0; i < m; i++)
 		{
 			for (int j = 0; j < m; j++,idx++,ret_idx++) // try to help it pipeline the instructions
@@ -993,7 +983,7 @@ public final class MathUtils {
 				// if (first_idx!=first.index(j,0)) throw new RuntimeException("You have bug!");
 				// if (ret_idx!=ret.index(j,i)) throw new RuntimeException("You have bug!");
 				ret.data()[ret_idx]
-					= linearCombinationFast(first.data(), vector, first_idx, 0, first.cols());
+						= linearCombinationFast(first.data(), vector, first_idx, 0, first.cols());
 			}
 			// extra stuff
 			// idxes are too far so push them back
@@ -1029,7 +1019,7 @@ public final class MathUtils {
 			throw new ArrayIndexOutOfBoundsException("Trying to multiply matrices of different dimensions?!");
 		final double ret[][] = new double[firstRows][secondCols];
 		for (int i = 0; i < secondCols; i++)
-		// iterate over columns so we can maintain cache locality!
+			// iterate over columns so we can maintain cache locality!
 		{
 			// TODO think about extracting column on the fly
 			final double[] vector = extractColumn(second,i);
@@ -1089,7 +1079,7 @@ public final class MathUtils {
 			throw new ArrayIndexOutOfBoundsException("Trying to multiply matrices of different dimensions?!");
 		final double ret[][] = new double[firstRows][secondCols];
 		for (int i = 0; i < secondCols; i++)
-		// iterate over columns so we can maintain cache locality!
+			// iterate over columns so we can maintain cache locality!
 		{
 			final double[] vector = extractColumn(second,i);
 			for (int k = 0; k < firstRows; k++)
@@ -1170,9 +1160,9 @@ public final class MathUtils {
 		for (; i < len_down; i+=unroll,xPtr+=unroll,yPtr+=unroll)
 		{
 			ret+= x[xPtr]*y[yPtr]
-				+ x[xPtr+1]*y[yPtr+1]
-				+ x[xPtr+2]*y[yPtr+2]
-				+ x[xPtr+3]*y[yPtr+3];
+					+ x[xPtr+1]*y[yPtr+1]
+							+ x[xPtr+2]*y[yPtr+2]
+									+ x[xPtr+3]*y[yPtr+3];
 		}
 		// get the terms at the end
 		for (; i < len; i++,xPtr++,yPtr++)
@@ -1430,28 +1420,22 @@ public final class MathUtils {
 		System.out.println("passed addSubtract");
 	}
 	public static final DoubleMatrix2D transpose(DoubleMatrix2D A){
-		  DoubleMatrix2D AT = new DoubleMatrix2D(A.cols(),A.rows());
-		  for(int i = 0; i < A.rows(); i++){
-			  double temp[] = new double[A.rows()];
-			  
-			  //for(int k = 0; k < temp.length; k++){
-			 
-			    temp = A.extractColumn(i);
-			//  }
-			  for(int j = 0; j < temp.length; j++){
-				  AT.set(temp[j]);
-				  AT.incrementColumn();
-			  }
-		
-		  }
-		  AT.resetPtr();
-		  return AT; 
+		DoubleMatrix2D AT = new DoubleMatrix2D(A.cols(),A.rows());
+		DoubleMatrix2D.Pointer ptr = AT.new Pointer();
+		for(int i = 0; i < A.cols(); i++)
+		{
+			final double[] temp = A.extractColumn(i);
+			for(int j = 0; j < temp.length; j++, ptr.increment())
+				ptr.setValue(temp[j]);
+		}
+		return AT; 
 	}
 
 	public static void main(String[] args)
 	{
+		final MicroBenchmark bench = new MicroBenchmark();
 		final int len = 1024;
-		logTime("start");
+		bench.logTime("start");
 		testAddSubtract();
 		testLinearCombination();
 		testMatrixMultiply();
@@ -1460,24 +1444,24 @@ public final class MathUtils {
 		//final int len = 1024;
 		final DoubleMatrix2D one = DoubleMatrix2D.random(len,len);
 		final DoubleMatrix2D two = DoubleMatrix2D.random(len,len);
-//		final DoubleMatrix2D one = DoubleMatrix2D.diagonal(new double[]{1,2,1,1});
-//		final DoubleMatrix2D two = DoubleMatrix2D.diagonal(new double[]{2,1,1,1});
+		//		final DoubleMatrix2D one = DoubleMatrix2D.diagonal(new double[]{1,2,1,1});
+		//		final DoubleMatrix2D two = DoubleMatrix2D.diagonal(new double[]{2,1,1,1});
 		DoubleMatrix2D foo = null;
 		testMatrixMultiply(one,two);
 		System.out.println("passed");
-		logTime("one");
+		bench.logTime("one");
 		for (int i = 0; i < 2; i++)
 			foo = matrixMultiplyFast(one,two);
-		logTime("Warmed up");
+		bench.logTime("Warmed up");
 		for (int i = 0; i < 5; i++)
 			foo = matrixMultiplyFast(two,one);
-		logTime("done");
+		bench.logTime("done");
 
 		if (true) return;
 
-		logTime("start");
+		bench.logTime("start");
 		final double[] data = shift(random(len),-.5);
-		logTime("random");
+		bench.logTime("random");
 		double fast,medium,slow;
 		fast = medium = slow = 0;
 
@@ -1491,16 +1475,16 @@ public final class MathUtils {
 		compare("MS",medium,slow);
 		compare("FM",fast,medium);
 
-		logTime("warmup");
+		bench.logTime("warmup");
 		for (int i = 0; i < 100; i++)
 			sum(data);
-		logTime("slow");
+		bench.logTime("slow");
 		for (int i = 0; i < 100; i++)
 			sumFast(data);
-		logTime("fast");
+		bench.logTime("fast");
 		for (int i = 0; i < 100; i++)
 			sumNaive(data);
-		logTime("mine");
+		bench.logTime("mine");
 	}
 }
 

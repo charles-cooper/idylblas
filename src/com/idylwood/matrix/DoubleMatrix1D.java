@@ -26,10 +26,12 @@
 
 package com.idylwood.matrix;
 
+import com.idylwood.utils.MathUtils;
+
 // Light wrapper for double vector. Mostly for readable comparison with other linear algebra libraries
 public class DoubleMatrix1D
 {
-	private final double[] data;
+	final double[] data;
 	public final int length;
 	// Copy constructor
 	public DoubleMatrix1D(DoubleMatrix1D other)
@@ -58,6 +60,31 @@ public class DoubleMatrix1D
 	public void set(final int idx, final double val)
 	{
 		data[idx] = val;
+	}
+	public DoubleMatrix1D scale(final double x)
+	{
+		final double[] new_data = MathUtils.scale(this.data, x);
+		return new DoubleMatrix1D(new_data, false);
+	}
+	public DoubleMatrix1D shift(final double x)
+	{
+		final double[] new_data = MathUtils.shift(this.data, x);
+		return new DoubleMatrix1D(new_data, false);
+	}
+	public DoubleMatrix1D plus(final DoubleMatrix1D other)
+	{
+		return new DoubleMatrix1D(MathUtils.add(this.data, other.data));
+	}
+	public static void copy(DoubleMatrix1D src, int srcOffset, DoubleMatrix1D dest, int destOffset, int len)
+	{
+		for (int i = 0; i < len; i++, srcOffset++, destOffset++)
+			dest.data[destOffset] = src.data[srcOffset];
+	}
+	public void copy(DoubleMatrix1D dest)
+	{
+		if (this.length!=dest.length)
+			throw new IllegalArgumentException("Destination vector has ");
+		copy(this,0,dest,0,this.length);
 	}
 }
 

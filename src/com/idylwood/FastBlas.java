@@ -2,6 +2,7 @@ package com.idylwood;
 
 import com.idylwood.matrix.DoubleMatrix1D;
 import com.idylwood.matrix.DoubleMatrix2D;
+import com.idylwood.matrix.DoubleMatrix2D.Pointer;
 import com.idylwood.utils.MathUtils;
 import com.idylwood.Blas;
 
@@ -12,7 +13,7 @@ public class FastBlas implements Blas
 	  Returns the sum of absolute values; <tt>|x[0]| + |x[1]| + ... </tt>.
 	  In fact equivalent to <tt>x.aggregate(cern.jet.math.Functions.plus, cern.jet.math.Functions.abs)</tt>.
 	  @param x the first vector.
-	 */
+	  */
 	@Override public double dasum(DoubleMatrix1D x){
 
 
@@ -38,8 +39,8 @@ public class FastBlas implements Blas
 		for (; i < len; i+=unroll)
 		{
 			final double val = temp[i] + temp[i+1]
-					+ temp[i+2] + temp[i+3]
-							+ temp[i+4] + temp[i+5];
+				+ temp[i+2] + temp[i+3]
+				+ temp[i+4] + temp[i+5];
 			final double partial = val - err;
 			final double hi = sum + val;
 			err = (hi - sum) - partial;
@@ -64,7 +65,7 @@ public class FastBlas implements Blas
 	  @param y the second source vector, this is also the vector where results are stored.
 
 	  @throws IllegalArgumentException <tt>x.size() != y.size()</tt>..
-	 */
+	  */
 	@Override public void daxpy(double alpha, DoubleMatrix1D x, DoubleMatrix1D y){
 		if ( x.length != y.length){
 			throw new ArrayIndexOutOfBoundsException("Vectors are of different dimension.");
@@ -86,20 +87,14 @@ public class FastBlas implements Blas
 	  @param B the second source matrix, this is also the matrix where results are stored.
 
 	  @throws IllegalArgumentException if <tt>A.columns() != B.columns() || A.rows() != B.rows()</tt>.
-	 */
+	  */
 	@Override public void daxpy(double alpha, DoubleMatrix2D A, DoubleMatrix2D B){
-		if(A.rows() != B.rows() ||
-				A.cols() != B.cols()){
+		if(A.rows() != B.rows() || A.cols() != B.cols())
 			throw new IllegalArgumentException ("Matricies are of different dimension.");
-		}
-		else{
-			int i = 0;
-			for(; i < (A.rows()* A.cols()); i++){
-				B.set(B.get() + (A.get()*alpha));
-				A.incrementColumn();
-				B.incrementColumn(); 
-			}
-		}
+		Pointer Aptr = A.ptr();
+		Pointer Bptr = B.ptr();
+		for(; Aptr.hasNext(); Aptr.increment(), Bptr.increment())
+			Bptr.setValue(Bptr.getValue() + (Aptr.getValue()*alpha));
 	}
 	/**
 	  Vector assignment (copying); <tt>y = x</tt>.
@@ -109,7 +104,7 @@ public class FastBlas implements Blas
 	  @param y the destination vector.
 
 	  @throws IllegalArgumentException <tt>x.size() != y.size()</tt>.
-	 */
+	  */
 	@Override public void dcopy(DoubleMatrix1D x, DoubleMatrix1D y){
 		if ( x.length != y.length){
 			throw new ArrayIndexOutOfBoundsException("Vectors are of different dimension.");
@@ -130,22 +125,11 @@ public class FastBlas implements Blas
 	  @param B the destination matrix.
 
 	  @throws IllegalArgumentException if <tt>A.columns() != B.columns() || A.rows() != B.rows()</tt>.
-	 */
+	  */
 	@Override public void dcopy(DoubleMatrix2D A, DoubleMatrix2D B){
-		if(A.rows() != B.rows() ||
-				A.cols() != B.cols()){
+		if(A.rows() != B.rows() || A.cols() != B.cols())
 			throw new IllegalArgumentException ("Matricies are of different dimension.");
-		}
-		else{
-			int i = 0;
-			for(; i < (A.rows()* A.cols()); i++){
-				B.set(A.get());
-				A.incrementColumn();
-				B.incrementColumn(); 
-			}
-			A.resetPtr();
-			B.resetPtr();
-		}
+		DoubleMatrix2D.copy(A, B);
 	}
 	/**
 	  Returns the dot product of two vectors x and y, which is <tt>Sum(x[i]*y[i])</tt>.
@@ -155,7 +139,7 @@ public class FastBlas implements Blas
 	  @return the sum of products.
 
 	  @throws IllegalArgumentException if <tt>x.size() != y.size()</tt>.
-	 */
+	  */
 	@Override public double ddot(DoubleMatrix1D x, DoubleMatrix1D y){
 		if ( x.length != y.length){
 			throw new ArrayIndexOutOfBoundsException("Vectors are of different dimension.");
@@ -186,104 +170,76 @@ Note: Matrix shape conformance is checked <i>after</i> potential transpositions.
 @throws IllegalArgumentException if <tt>B.rows() != A.columns()</tt>.
 @throws IllegalArgumentException if <tt>C.rows() != A.rows() || C.columns() != B.columns()</tt>.
 @throws IllegalArgumentException if <tt>A == C || B == C</tt>.
-	 */
+*/
 	@Override public void dgemm(boolean transposeA, boolean transposeB, double alpha, DoubleMatrix2D A, DoubleMatrix2D B, double beta, DoubleMatrix2D C){
-		if(transposeA == true){
-			A = MathUtils.transpose(A);
-		}
-		if(transposeB == true){
-			B = MathUtils.transpose(B);
-		}
-		if(B.rows() != A.cols()){
+		if (B.rows() != A.cols())
 			throw new IllegalArgumentException ("Multipication undefined.");
-		}
-		else if( C.rows() != A.rows() || C.cols() != B.cols() ){
-			throw new IllegalArgumentException 
-			("C has wrong dimensions .");
-		}
-		else if(  A == C || B == C  ){
-			throw new IllegalArgumentException 
-			("A or B is bad.");}
-		else{
-			for( int i = 0; i < ((C.rows())*(C.cols())); i++){
-				C.set(C.get()*beta);
-				C.incrementColumn();
-			}
-			C.resetPtr();
-			daxpy(alpha, MathUtils.matrixMultiply(A, B), C);
-		}
+		if (C.rows() != A.rows() || C.cols() != B.cols())
+			throw new IllegalArgumentException ("C has wrong dimensions .");
+		if (A == C || B == C)
+			throw new IllegalArgumentException ("A or B is bad.");
 
+		if (transposeA)
+			A = MathUtils.transpose(A);
+		if (transposeB)
+			B = MathUtils.transpose(B);
+		for ( final Pointer ptr = C.ptr(); ptr.hasNext(); ptr.increment())
+			ptr.setValue(ptr.getValue() * beta);
+		daxpy(alpha, MathUtils.matrixMultiply(A, B), C);
 	}
 
 	/**
-	  Generalized linear algebraic matrix-vector multiply; <tt>y = alpha*A*x + beta*y</tt>.
-	  In fact equivalent to <tt>A.zMult(x,y,alpha,beta,transposeA)</tt>.
-Note: Matrix shape conformance is checked <i>after</i> potential transpositions.
-
-@param transposeA set this flag to indicate that the multiplication shall be performed on A'.
-@param alpha a scale factor.
-@param A the source matrix.
-@param x the first source vector.
-@param beta a scale factor.
-@param y the second source vector, this is also the vector where results are stored.
-
-@throws IllegalArgumentException <tt>A.columns() != x.size() || A.rows() != y.size())</tt>..
+	 * Generalized linear algebraic matrix-vector multiply; <tt>y = alpha*A*x + beta*y</tt>.
+	 * In fact equivalent to <tt>A.zMult(x,y,alpha,beta,transposeA)</tt>.
+	 * Note: Matrix shape conformance is checked <i>after</i> potential transpositions.
+	 *
+	 * @param transposeA set this flag to indicate that the multiplication shall be performed on A'.
+	 * @param alpha a scale factor.
+	 * @param A the source matrix.
+	 * @param x the first source vector.
+	 * @param beta a scale factor.
+	 * @param y the second source vector, this is also the vector where results are stored.
+	 * 
+	 * @throws IllegalArgumentException <tt>A.columns() != x.size() || A.rows() != y.size())</tt>..
 	 */
 	@Override public void dgemv(boolean transposeA, double alpha, DoubleMatrix2D A, DoubleMatrix1D x, double beta, DoubleMatrix1D y){
-		if(transposeA == true){
+		if (A.cols() != x.length || A.rows() != y.length)
+			throw new IllegalArgumentException ("Bad dimensions.");
+		if(transposeA)
 			A = MathUtils.transpose(A);
-		}
-		if(A.cols() != x.length || A.rows() != y.length){
-			throw new IllegalArgumentException 
-			("Bad dimensions.");}
-		else{
-			for(int i = 0; i < y.length; i++){
-				y.set(i, beta*y.get(i));
-			}
-			for(int i = 0; i < A.rows(); i++){
-				for(int j = 0; j < A.cols(); j++){
-					y.set(j, (y.get(j)+ alpha*x.get(j)*A.get()));
-					A.incrementColumn();
-				}
-				A.resetPtr();
-
-				for(int k = 0; k < i; k++){
-					A.incrementRow();
-				}
-				System.out.println(A.ptr());
-			}
-		}
+		A.multiply(x).scale(alpha) // alpha * A * x
+			.plus(y.scale(beta)) // + y*beta
+			.copy(y); // copy in
 	}
 	/**
-	  Performs a rank 1 update; <tt>A = A + alpha*x*y'</tt>.
-Example:
-<pre>
-A = { {6,5}, {7,6} }, x = {1,2}, y = {3,4}, alpha = 1 -->
-A = { {9,9}, {13,14} }
-</pre>
+	 * Performs a rank 1 update; <tt>A = A + alpha*x*y'</tt>.
+	 * Example:
+	 * <pre>
+	 * A = { {6,5}, {7,6} }, x = {1,2}, y = {3,4}, alpha = 1 -->
+	 * A = { {9,9}, {13,14} }
+	 * </pre>
 
-@param alpha a scalar.
-@param x an m element vector.
-@param y an n element vector.
-@param A an m by n matrix.
+	 * @param alpha a scalar.
+	 * @param x an m element vector.
+	 * @param y an n element vector.
+	 * @param A an m by n matrix.
 	 */
 	@Override public void dger(double alpha, DoubleMatrix1D x, DoubleMatrix1D y, DoubleMatrix2D A){
-		for(int j = 0; j < y.length; j++){
-			for(int i = 0; i < x.length; i++){
-				A.set(A.get() + alpha*x.get(i)*y.get(j));
-				A.incrementColumn();
-			}
-		}
-		A.resetPtr();
+		if (x.length != A.rows())
+			throw new IllegalArgumentException("Bad rows");
+		if (y.length != A.cols())
+			throw new IllegalArgumentException("Bad columns");
+		for (final Pointer ptr = A.ptr(); ptr.hasNext(); ptr.increment())
+			ptr.setValue(ptr.getValue() + alpha*x.get(ptr.currentColumn())*y.get(ptr.currentRow()));
 	}
 	/**
 	  Return the 2-norm; <tt>sqrt(x[0]^2 + x[1]^2 + ...)</tt>.
 	  In fact equivalent to <tt>Math.sqrt(Algebra.DEFAULT.norm2(x))</tt>.
 
 	  @param x the vector.
-	 */
+	  */
 	@Override public double dnrm2(DoubleMatrix1D x){
-		
+
 		double num = 0; 
 		for(int i = 0; i < x.length ; i++){
 			num += x.get(i);
@@ -296,7 +252,7 @@ A = { {9,9}, {13,14} }
 	  @param y the second vector.
 	  @param c the cosine of the angle of rotation.
 	  @param s the sine of the angle of rotation.
-	 */
+	  */
 	@Override public void drot(DoubleMatrix1D x, DoubleMatrix1D y, double c, double s){
 
 	}
@@ -308,7 +264,7 @@ A = { {9,9}, {13,14} }
 	  @param  a  rotational elimination parameter a.
 	  @param  b  rotational elimination parameter b.
 	  @param  rotvec[]  Must be at least of length 4. On output contains the values <tt>{a,b,c,s}</tt>.
-	 */
+	  */
 	@Override public void drotg(double a, double b, double rotvec[]){
 
 	}
@@ -318,7 +274,7 @@ A = { {9,9}, {13,14} }
 
 	  @param alpha a scale factor.
 	  @param x the first vector.
-	 */
+	  */
 	@Override public void dscal(double alpha, DoubleMatrix1D x){
 		for(int i = 0; i < x.length; i++){
 			x.set(i, x.get(i)*alpha);
@@ -336,7 +292,7 @@ A = { {9,9}, {13,14} }
 
 	  @param alpha a scale factor.
 	  @param A the matrix.
-	 */
+	  */
 	@Override public void dswap(DoubleMatrix1D x, DoubleMatrix1D y){
 		double holder = 0;
 		for (int i = 0; i < x.length; i++){
@@ -352,18 +308,19 @@ A = { {9,9}, {13,14} }
 	  @param B the second matrix.
 
 	  @throws IllegalArgumentException if <tt>A.columns() != B.columns() || A.rows() != B.rows()</tt>.
-	 */
+	  */
 	@Override public void dswap(DoubleMatrix2D x, DoubleMatrix2D y){
-		double holder = 0;
-		for (int i = 0; i < x.rows()*x.cols(); i++){
-			holder = y.get();
-			y.set(x.get()); 
-			x.set(holder);
-			x.incrementColumn();
-			y.incrementColumn();
+		if (x.cols()!=y.cols() || x.rows()!=y.rows())
+			throw new IllegalArgumentException("Bad dimensions!");
+		double tmp;
+		Pointer x_ptr = x.ptr();
+		Pointer y_ptr = y.ptr();
+		for (; x_ptr.hasNext(); x_ptr.increment(), y_ptr.increment())
+		{
+			tmp = y_ptr.getValue();
+			y_ptr.setValue(x_ptr.getValue()); 
+			x_ptr.setValue(tmp);
 		}
-		x.resetPtr();
-		y.resetPtr();
 	}
 	/**
 	  Symmetric matrix-vector multiplication; <tt>y = alpha*A*x + beta*y</tt>.
@@ -377,7 +334,7 @@ A = { {9,9}, {13,14} }
 	  @param x the first source vector.
 	  @param beta scaling factor.
 	  @param y the second vector holding source and destination.
-	 */
+	  */
 	@Override public void dsymv(boolean isUpperTriangular, double alpha, DoubleMatrix2D A, DoubleMatrix1D x, double beta, DoubleMatrix1D y)
 	{
 
@@ -391,7 +348,7 @@ A = { {9,9}, {13,14} }
 	  @param isUnitTriangular true --> A is assumed to be unit triangular; false --> A is not assumed to be unit triangular
 	  @param A the source matrix.
 	  @param x the vector holding source and destination.
-	 */
+	  */
 	@Override public void dtrmv(boolean isUpperTriangular, boolean transposeA, boolean isUnitTriangular, DoubleMatrix2D A, DoubleMatrix1D x){
 
 	}
@@ -400,7 +357,7 @@ A = { {9,9}, {13,14} }
 
 	  @param x the vector to search through.
 	  @return the index of largest absolute value (-1 if x is empty).
-	 */
+	  */
 	@Override public int idamax(DoubleMatrix1D x)
 	{
 		double check = MathUtils.abs(x.get(0));
@@ -418,13 +375,13 @@ A = { {9,9}, {13,14} }
 	{
 		System.out.println("hello!");
 		double testdata[] = {1,1,0}; 
-		double testdataz[] = {1,1,1,1,1,1,1,1,1};
+		double testdataz[][] = {{1,1,1},{1,1,1},{1,1,1}};
 		double testdatax[] = {0,0,0};
 
 
 
 		DoubleMatrix1D test = new DoubleMatrix1D(testdata); 
-		DoubleMatrix2D test2 = new DoubleMatrix2D(testdataz, 3, 3);
+		DoubleMatrix2D test2 = new DoubleMatrix2D(testdataz);
 		DoubleMatrix1D test3 = new DoubleMatrix1D(testdatax );
 
 
