@@ -184,11 +184,11 @@ public final class MathUtils {
 
 	// for comparison purposes
 	/*
-	static public final double varianceApache(final double[] values)
-	{
-		return new org.apache.commons.math3.stat.descriptive.moment.Variance().evaluate(values);
-	}
-	 */
+	   static public final double varianceApache(final double[] values)
+	   {
+	   return new org.apache.commons.math3.stat.descriptive.moment.Variance().evaluate(values);
+	   }
+	   */
 
 	// Alternative implementation of variance. Not sure which one is more precise.
 	static public final double varianceTwo(final double [] values)
@@ -316,10 +316,10 @@ public final class MathUtils {
 	 */
 	final public static double meanArbitraryPrecision(final double data[])
 	{ BigDecimal mean = new BigDecimal(0);
-	for (double x : data)
-		mean = mean.add(new BigDecimal(x),MathContext.UNLIMITED);
-	mean = mean.divide(new BigDecimal(data.length),MathContext.UNLIMITED);
-	return mean.doubleValue();
+		for (double x : data)
+			mean = mean.add(new BigDecimal(x),MathContext.UNLIMITED);
+		mean = mean.divide(new BigDecimal(data.length),MathContext.UNLIMITED);
+		return mean.doubleValue();
 	}
 
 	// funnily enough, even though this uses BigDecimals,
@@ -488,11 +488,11 @@ public final class MathUtils {
 
 	// for comparison with apache commons. not for production code!
 	/*
-	static final double apacheSum(final double[] values)
-	{
-		return new org.apache.commons.math3.stat.descriptive.summary.Sum().evaluate(values);
-	}
-	 */
+	   static final double apacheSum(final double[] values)
+	   {
+	   return new org.apache.commons.math3.stat.descriptive.summary.Sum().evaluate(values);
+	   }
+	   */
 
 	/**
 	 * Copies the sign of sign into magnitude.
@@ -549,7 +549,7 @@ public final class MathUtils {
 	public static final int abs(final int i)
 	{
 		final int sign = i>>>31;
-			return (i^(~sign+1)) + sign;
+		return (i^(~sign+1)) + sign;
 	}
 
 	/**
@@ -569,6 +569,30 @@ public final class MathUtils {
 	 * @return
 	 * Side Effects: none
 	 */
+	public static final double sumKahanOld(final double... values)
+	{
+		double sum = 0;
+		double err = 0;
+		final int unroll = 6;
+		final int len = values.length - values.length%unroll;
+		for (int i = 0; i < len; i+=unroll)
+		{
+			final double val = values[i] + values[i+1] + values[i+2] + values[i+3] + values[i+4] + values[i+5];
+			final double partial = val - err;
+			final double hi = sum + partial;
+			err = (hi - sum) - partial;
+			sum = hi;
+		}
+		for (int i = len; i < values.length; i++)
+		{
+			final double val = values[i];
+			final double partial = val - err;
+			final double hi = sum + partial;
+			err = (hi - sum) - partial;
+			sum = hi;
+		}
+		return sum;
+	}
 	public static final double sum(final double... values)
 	{
 		double sum = 0;
@@ -579,26 +603,44 @@ public final class MathUtils {
 		// unroll the loop. due to IEEE 754 restrictions
 		// the JIT shouldn't be allowed to unroll it dynamically, so it's
 		// up to us to do it by hand ;)
-		int i = 0;
-		for (; i < len; i+=unroll)
+		for (int i = 0; i < len; i+=unroll)
 		{
-			final double val = values[i] + values[i+1]
-					+ values[i+2] + values[i+3]
-							+ values[i+4] + values[i+5];
-			final double partial = val - err;
-			final double hi = sum + val;
-			err = (hi - sum) - partial;
+			//final double val = values[i] + values[i+1]
+			//	+ values[i+2] + values[i+3]
+			//	+ values[i+4] + values[i+5];
+			final double val0 = values[i];
+			final double val1 = values[i] + values[i+1];
+			final double val2 = values[i] + values[i+1] + values[i+2];
+			final double val3 = values[i] + values[i+1] + values[i+2] + values[i+3];
+			final double val4 = values[i] + values[i+1] + values[i+2] + values[i+3] + values[i+4];
+			final double val5 = values[i] + values[i+1] + values[i+2] + values[i+3] + values[i+4] + values[i+5];
+			/*
+			final double val1 = val0 + values[i+1];
+			final double val2 = val1 + values[i+2];
+			final double val3 = val2 + values[i+3];
+			final double val4 = val3 + values[i+4];
+			final double val5 = val4 + values[i+5];
+			*/
+			final double err4 = val5 - val4 - values[i+5];
+			final double err3 = val4 - val3 - values[i+4];
+			final double err2 = val3 - val2 - values[i+3];
+			final double err1 = val2 - val1 - values[i+2];
+			final double err0 = val1 - val0 - values[i+1];
+			final double loop_err = err0 + err1 + err2 + err3 + err4;
+			final double partial = val5;
+			final double hi = sum + partial;
+			err += (hi - sum) - partial + loop_err;
 			sum = hi;
 		}
-		for (; i < values.length; i++)
+		for (int i = len; i < values.length; i++)
 		{
 			final double val = values[i];
 			final double partial = val - err;
-			final double hi = sum + val;
+			final double hi = sum + partial;
 			err = (hi - sum) - partial;
 			sum = hi;
 		}
-		return sum;
+		return sum - err;
 	}
 
 	// Numerically naive, unoptimized version of sum. Intended for demonstrating superiority of
@@ -745,9 +787,9 @@ public final class MathUtils {
 		{
 			// this line depends on unroll variable.
 			final double prod = x[xPtr]*y[yPtr]
-					+ x[xPtr+1]*y[yPtr+1]
-							+ x[xPtr+2]*y[yPtr+2]
-									+ x[xPtr+3]*y[yPtr+3];
+				+ x[xPtr+1]*y[yPtr+1]
+				+ x[xPtr+2]*y[yPtr+2]
+				+ x[xPtr+3]*y[yPtr+3];
 			final double partial = prod - err;
 			final double hi = sum + prod;
 			err = (hi - sum) - partial;
@@ -983,7 +1025,7 @@ public final class MathUtils {
 				// if (first_idx!=first.index(j,0)) throw new RuntimeException("You have bug!");
 				// if (ret_idx!=ret.index(j,i)) throw new RuntimeException("You have bug!");
 				ret.data()[ret_idx]
-						= linearCombinationFast(first.data(), vector, first_idx, 0, first.cols());
+					= linearCombinationFast(first.data(), vector, first_idx, 0, first.cols());
 			}
 			// extra stuff
 			// idxes are too far so push them back
@@ -1160,9 +1202,9 @@ public final class MathUtils {
 		for (; i < len_down; i+=unroll,xPtr+=unroll,yPtr+=unroll)
 		{
 			ret+= x[xPtr]*y[yPtr]
-					+ x[xPtr+1]*y[yPtr+1]
-							+ x[xPtr+2]*y[yPtr+2]
-									+ x[xPtr+3]*y[yPtr+3];
+				+ x[xPtr+1]*y[yPtr+1]
+				+ x[xPtr+2]*y[yPtr+2]
+				+ x[xPtr+3]*y[yPtr+3];
 		}
 		// get the terms at the end
 		for (; i < len; i++,xPtr++,yPtr++)
@@ -1430,17 +1472,45 @@ public final class MathUtils {
 		}
 		return AT; 
 	}
+	/*
+	public static final double sumKahanOne(final double... values)
+	{
+		double sum, err;
+		err = sum = 0;
+		for (int i = 0; i < values.length; i++)
+		{
+			final double partial = values[i] - err;
+			final double hi = sum + partial;
+			err = (hi - sum) - partial;
+			sum = hi;
+		}
+		return sum;
+	}
+	public static final double sumKahanTwo(final double... values)
+	{
+		double sum, err;
+		err = sum = 0;
+		for (int i = 0; i < values.length; i++)
+		{
+			final double hi = sum + values[i];
+			err += (hi - sum) - values[i];
+			sum = hi;
+		}
+		return sum - err;
+	}
+	*/
 
 	public static void main(String[] args)
 	{
 		final MicroBenchmark bench = new MicroBenchmark();
-		final int len = 1024;
-		bench.logTime("start");
-		testAddSubtract();
-		testLinearCombination();
-		testMatrixMultiply();
-		testMatrixMultiplyFast();
-		testMatrixMultiplyStrassen();
+		final int len = 1024*1024*10;
+		/*
+		   bench.logTime("start");
+		   testAddSubtract();
+		   testLinearCombination();
+		   testMatrixMultiply();
+		   testMatrixMultiplyFast();
+		   testMatrixMultiplyStrassen();
 		//final int len = 1024;
 		final DoubleMatrix2D one = DoubleMatrix2D.random(len,len);
 		final DoubleMatrix2D two = DoubleMatrix2D.random(len,len);
@@ -1451,39 +1521,39 @@ public final class MathUtils {
 		System.out.println("passed");
 		bench.logTime("one");
 		for (int i = 0; i < 2; i++)
-			foo = matrixMultiplyFast(one,two);
+		foo = matrixMultiplyFast(one,two);
 		bench.logTime("Warmed up");
 		for (int i = 0; i < 5; i++)
-			foo = matrixMultiplyFast(two,one);
+		foo = matrixMultiplyFast(two,one);
 		bench.logTime("done");
-
-		if (true) return;
+		*/
 
 		bench.logTime("start");
-		final double[] data = shift(random(len),-.5);
+		final double[] data = reverse(sort(shift(random(len),-.5)));
 		bench.logTime("random");
 		double fast,medium,slow;
 		fast = medium = slow = 0;
 
-		for (int i = 0; i < 100; i++)
+		//for (int i = 0; i < 100; i++)
 		{
-			fast = sumFast(data);
-			slow = sum(data);
-			medium = sumNaive(data);
+			fast = sumKahanOld(data);
+			slow = sumSlow(data);
+			medium = sum(data);
 		}
 		compare("FS",fast,slow);
 		compare("MS",medium,slow);
 		compare("FM",fast,medium);
+		if (true) return;
 
 		bench.logTime("warmup");
 		for (int i = 0; i < 100; i++)
-			sum(data);
+			sumSlow(data);
 		bench.logTime("slow");
 		for (int i = 0; i < 100; i++)
-			sumFast(data);
+			sumKahanOld(data);
 		bench.logTime("fast");
 		for (int i = 0; i < 100; i++)
-			sumNaive(data);
+			sum(data);
 		bench.logTime("mine");
 	}
 }
