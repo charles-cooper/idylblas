@@ -236,7 +236,7 @@ public class ReferenceBLAS implements Blas
       double holder = 0;
       for(; i<x.length; i++){
     	  holder = x.get(i);
-    	  x.set(i,( x.get(i)*c - y.get(i)*s );
+    	  x.set(i,( x.get(i)*c - y.get(i)*s ));
           y.set(i,( y.get(i)*c - holder*s));
       }
 	}
@@ -329,34 +329,41 @@ public class ReferenceBLAS implements Blas
 	 */
 	@Override public void dsymv(boolean isUpperTriangular, double alpha, DoubleMatrix2D A, DoubleMatrix1D x, double beta, DoubleMatrix1D y)
 	{
-		if(isUpperTriangular == true){
-			double amswer = new double[x.length];
-			double temp = new double[x.length];
+		if(isUpperTriangular){
+			double answer[] = new double[x.length];
+			
 			
 			
 			for( int i = 0; i < x.length; i++)
 			{
 				answer[i] = 0;
-				temp = A.extractRow(i);
+				double temp[] = A.extractRow(i);
 				for(int j = i; j < x.length; j++)
 				{
-					answer[j] += temp[j]*x.get[j];
+					answer[j] += temp[j]*x.get(j);
 				}
-		 x = answer;
+				for(int k = 0; k < x.length; k++){
+					x.set(k, answer[k]);
+				}
 			}
 		}
 		else{
-			double amswer = new double[x.length];
-			double temp = new double[x.length];
+			double answer[] = new double[x.length];
+			int j = 0;
 			for( int i = 0; i < x.length; i++)
 			{
 				answer[i] = 0;
-				temp = A.extractRow(i);
+				double temp[] = A.extractRow(i);
+				j = 0;
 				do
 				{
-					answer[j] += temp[j]*x.get[j];
+					answer[j] += temp[j]*x.get(j);
 				}
 				while(j != i);
+		}
+			for(int k = 0; k < x.length; k++){
+				x.set(k, answer[k]);
+			}
 		}
 	}
 	/**
@@ -372,9 +379,7 @@ public class ReferenceBLAS implements Blas
 	@Override public void dtrmv(boolean isUpperTriangular, boolean transposeA, boolean isUnitTriangular, DoubleMatrix2D A, DoubleMatrix1D x){
         if (isUpperTriangular == true)
         {
-        	double temp[]= new double[x.length];
-        	double row[] = new double[x.length];
-        	for(int i = 0; i < )
+        	
         }
 	}
 	/**
