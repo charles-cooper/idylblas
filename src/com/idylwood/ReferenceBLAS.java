@@ -232,13 +232,7 @@ public class ReferenceBLAS implements Blas
 	 */
 	@Override public void drot(DoubleMatrix1D x, DoubleMatrix1D y, double c, double s)
 	{
-      int i = 0;
-      double holder = 0;
-      for(; i<x.length; i++){
-    	  holder = x.get(i);
-    	  x.set(i,( x.get(i)*c - y.get(i)*s );
-          y.set(i,( y.get(i)*c - holder*s));
-      }
+
 	}
 	/**
 	 * Constructs a Givens plane rotation for <tt>(a,b)</tt>.
@@ -329,35 +323,7 @@ public class ReferenceBLAS implements Blas
 	 */
 	@Override public void dsymv(boolean isUpperTriangular, double alpha, DoubleMatrix2D A, DoubleMatrix1D x, double beta, DoubleMatrix1D y)
 	{
-		if(isUpperTriangular == true){
-			double amswer = new double[x.length];
-			double temp = new double[x.length];
-			
-			
-			for( int i = 0; i < x.length; i++)
-			{
-				answer[i] = 0;
-				temp = A.extractRow(i);
-				for(int j = i; j < x.length; j++)
-				{
-					answer[j] += temp[j]*x.get[j];
-				}
-		 x = answer;
-			}
-		}
-		else{
-			double amswer = new double[x.length];
-			double temp = new double[x.length];
-			for( int i = 0; i < x.length; i++)
-			{
-				answer[i] = 0;
-				temp = A.extractRow(i);
-				do
-				{
-					answer[j] += temp[j]*x.get[j];
-				}
-				while(j != i);
-		}
+
 	}
 	/**
 	 * Triangular matrix-vector multiplication; <tt>x = A*x</tt> or <tt>x = A'*x</tt>.
@@ -370,12 +336,7 @@ public class ReferenceBLAS implements Blas
 	 * @param x the vector holding source and destination.
 	 */
 	@Override public void dtrmv(boolean isUpperTriangular, boolean transposeA, boolean isUnitTriangular, DoubleMatrix2D A, DoubleMatrix1D x){
-        if (isUpperTriangular == true)
-        {
-        	double temp[]= new double[x.length];
-        	double row[] = new double[x.length];
-        	for(int i = 0; i < )
-        }
+
 	}
 	/**
 	 * Returns the index of largest absolute value; <tt>i such that |x[i]| == max(|x[0]|,|x[1]|,...).</tt>.
