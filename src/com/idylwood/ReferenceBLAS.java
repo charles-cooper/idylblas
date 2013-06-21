@@ -391,7 +391,7 @@ public class ReferenceBLAS implements Blas
 			        x.set(m,answer[m]);
 			      }
 			   }
-	}
+	
 	/**
 	 * Triangular matrix-vector multiplication; <tt>x = A*x</tt> or <tt>x = A'*x</tt>.
 	 * Where x is an n element vector and A is an n by n unit, or non-unit,
