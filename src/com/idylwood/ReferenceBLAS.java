@@ -251,7 +251,42 @@ public class ReferenceBLAS implements Blas
 	 */
 	@Override public void drotg(double a, double b, double rotvec[])
 	{
-
+		double c,s,roe,scale,r,z,ra,rb;
+		
+		        roe = b;
+	
+		        if (MathUtils.abs(a) > MathUtils.abs(b)) roe = a;
+		
+		        scale = MathUtils.abs(a) + MathUtils.abs(b);
+		
+		        if (scale != 0.0) {
+		
+		                ra = a/scale;
+		                rb = b/scale;
+		                r = scale*Math.sqrt(ra*ra + rb*rb);
+		                r = MathUtils.copySign(1.0,roe)*r;
+		                c = a/r;
+		                s = b/r;
+		                z = 1.0;
+		                if (MathUtils.abs(a) > MathUtils.abs(b)) z = s;
+		                if ((MathUtils.abs(b) >= MathUtils.abs(a)) && (c != 0.0)) z = 1.0/c;
+		
+		        } else {
+		
+		                c = 1.0;
+		                s = 0.0;
+		                r = 0.0;
+		                z = 0.0;
+		
+		        }
+		
+		        a = r;
+		        b = z;
+		
+		        rotvec[0] = a;
+		        rotvec[1] = b;
+		        rotvec[2] = c;
+		       rotvec[3] = s;
 	}
 	/**
 	 * Vector scaling; <tt>x = alpha*x</tt>.
@@ -329,42 +364,33 @@ public class ReferenceBLAS implements Blas
 	 */
 	@Override public void dsymv(boolean isUpperTriangular, double alpha, DoubleMatrix2D A, DoubleMatrix1D x, double beta, DoubleMatrix1D y)
 	{
-		if(isUpperTriangular){
-			double answer[] = new double[x.length];
-			
-			
-			
-			for( int i = 0; i < x.length; i++)
-			{
-				answer[i] = 0;
-				double temp[] = A.extractRow(i);
-				for(int j = i; j < x.length; j++)
-				{
-					answer[j] += temp[j]*x.get(j);
-				}
-				for(int k = 0; k < x.length; k++){
-					x.set(k, answer[k]);
-				}
-			}
-		}
-		else{
-			double answer[] = new double[x.length];
-			int j = 0;
-			for( int i = 0; i < x.length; i++)
-			{
-				answer[i] = 0;
-				double temp[] = A.extractRow(i);
-				j = 0;
-				do
-				{
-					answer[j] += temp[j]*x.get(j);
-				}
-				while(j != i);
-		}
-			for(int k = 0; k < x.length; k++){
-				x.set(k, answer[k]);
-			}
-		}
+		if(!isUpperTriangular){
+			      A = MathUtils.transpose(A);
+			    }
+			    double answer[] = new double[x.length];
+			    Pointer Aptr = A.ptr();
+			    int k = 0;
+			    for( int i = 0; i < x.length; i++)
+			    {
+			      answer[i] = 0;
+			      double temp[] = A.extractRow(i);
+			      for(int j = i; j < x.length; j++)
+			      {
+			          k = 0;
+			        while(k < i)
+			        {
+			          Aptr.set(k, i);
+			          answer[k] = Aptr.getValue()*temp[k];
+			          k++;
+			        }
+			        answer[j] += temp[j]*x.get(j);
+			      }
+			    }
+			      for(int m = 0; m < x.length; m++)
+			      {
+			        x.set(m,answer[m]);
+			      }
+			   }
 	}
 	/**
 	 * Triangular matrix-vector multiplication; <tt>x = A*x</tt> or <tt>x = A'*x</tt>.
@@ -377,11 +403,45 @@ public class ReferenceBLAS implements Blas
 	 * @param x the vector holding source and destination.
 	 */
 	@Override public void dtrmv(boolean isUpperTriangular, boolean transposeA, boolean isUnitTriangular, DoubleMatrix2D A, DoubleMatrix1D x){
-        if (isUpperTriangular == true)
-        {
-        	
+        	if(isUpperTriangular){
+    			double answer[] = new double[x.length];
+    			
+    			
+    			
+    			for( int i = 0; i < x.length; i++)
+    			{
+    				answer[i] = 0;
+    				double temp[] = A.extractRow(i);
+    				for(int j = i; j < x.length; j++)
+    				{
+    					answer[j] += temp[j]*x.get(j);
+    				}
+    				for(int k = 0; k < x.length; k++){
+    					x.set(k, answer[k]);
+    				}
+    			}
+    		}
+    		else{
+    			double answer[] = new double[x.length];
+    			int j = 0;
+    			for( int i = 0; i < x.length; i++)
+    			{
+    				answer[i] = 0;
+    				double temp[] = A.extractRow(i);
+    				j = 0;
+    				do
+    				{
+    					answer[j] += temp[j]*x.get(j);
+    				}
+    				while(j != i);
+    		}
+    			for(int k = 0; k < x.length; k++){
+    				x.set(k, answer[k]);
+    			}
+    		}
+    	
         }
-	}
+	
 	/**
 	 * Returns the index of largest absolute value; <tt>i such that |x[i]| == max(|x[0]|,|x[1]|,...).</tt>.
 	 *
