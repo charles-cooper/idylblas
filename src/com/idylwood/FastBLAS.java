@@ -177,14 +177,12 @@ public class FastBLAS implements Blas
 		if (transposeB)
 			B = MathUtils.transpose(B);
 		    int i = 0;
-		    int j = 0;
-		for ( ; i < C.rows(); i++)
-		{
-			for(; j<C.cols(); i++)
-			{
-			   C.set(i, j, C.get(i,j)*beta);
-			}
-		}
+
+		double temp[] = C.data();
+		for ( ; i < C.rows()*C.cols(); i++)
+		  {
+		  temp[i] = temp[i]*beta;
+		  }
 		daxpy(alpha, MathUtils.matrixMultiply(A, B), C);
 	}
 
@@ -229,8 +227,9 @@ public class FastBLAS implements Blas
 			throw new IllegalArgumentException("Bad rows");
 		if (y.length != A.cols())
 			throw new IllegalArgumentException("Bad columns");
-		for (final Pointer ptr = A.ptr(); ptr.hasNext(); ptr.increment())
-			ptr.setValue(ptr.getValue() + alpha*x.get(ptr.currentColumn())*y.get(ptr.currentRow()));
+		double temp[] = A.data();
+		for (int i = 0; i < A.rows()*A.cols(); i++)
+			temp[i] = temp[i] + alpha*x.get(i%(A.cols()))*y.get(i%(A.rows())); 
 	}
 	/**
 	 * Return the 2-norm; <tt>sqrt(x[0]^2 + x[1]^2 + ...)</tt>.
@@ -329,14 +328,11 @@ public class FastBLAS implements Blas
 	 */
 	@Override public void dscal(double alpha, DoubleMatrix2D A)
 	{
-		int i = 0;
-		int j = 0;
-		for(; i < A.rows();i++)
+		
+		double temp[] = A.data();
+		for(int i = 0; i < A.cols()*A.rows();i++)
 		{
-			for(;j<A.cols();j++)
-			{
-				A.set(i, j, A.get(i, j)*alpha); 
-			}
+			temp[i] = temp[i]*alpha;
 		}
 	}
 	/**
@@ -367,17 +363,14 @@ public class FastBLAS implements Blas
 	@Override public void dswap(DoubleMatrix2D x, DoubleMatrix2D y){
 		if (x.cols()!=y.cols() || x.rows()!=y.rows())
 			throw new IllegalArgumentException("Bad dimensions!");
-		double temp;
-		int i = 0;
-		int j = 0;
-		for(;i<x.rows();i++)
-		{
-			for(;j<x.cols();j++)
-			{
-				temp = x.get(i, j);
-				x.set(i,j, y.get(i,j));
-				y.set(i,j,temp);
-			}
+		double holder;
+		double tempx[] = x.data();
+		double tempy[] = y.data();
+
+		for(int i = 0; i < x.rows()*x.cols(); i++){
+			holder = tempy[i];
+			tempy[i] = tempx[i];
+			tempx[i] = holder;
 		}
 	}
 	/**
@@ -396,31 +389,36 @@ public class FastBLAS implements Blas
 	@Override public void dsymv(boolean isUpperTriangular, double alpha, DoubleMatrix2D A, DoubleMatrix1D x, double beta, DoubleMatrix1D y)
 	{
 		if(!isUpperTriangular){
-			      A = MathUtils.transpose(A);
-			    }
-			    double answer[] = new double[x.length];
-			    Pointer Aptr = A.ptr();
-			    int k = 0;
-			    for( int i = 0; i < x.length; i++)
-			    {
-			      answer[i] = 0;
-			      double temp[] = A.extractRow(i);
-			      for(int j = i; j < x.length; j++)
-			      {
-			          k = 0;
-			        while(k < i)
-			        {
-			          Aptr.set(k, i);
-			          answer[k] = Aptr.getValue()*temp[k];
-			          k++;
-			        }
-			        answer[j] += temp[j]*x.get(j);
-			      }
-			    }
-			      for(int m = 0; m < x.length; m++)
-			      {
-			        x.set(m,answer[m]);
-			      }
+			A = MathUtils.transpose(A);
+		}
+		    double answer[] = new double[x.length];
+		      for(int i = 0; i < x.length; i++)
+		      {
+		    	  answer[i] = 0;
+		      }
+		    double temp[] = A.data();
+
+		    for( int i = 0; i < A.rows(); i++)
+		    {
+		      for( int j = 0; j < A.cols(); j++ )
+		      {
+		    	  if(j < i){
+		    	  answer[j] += (temp[j*A.cols() + i]* x.get(j)*alpha);
+		    	  }
+		    	  else{
+		    		  answer[j] += (temp[i*A.cols() + j]* x.get(j)*alpha);
+		    	  }
+		      }
+		    }
+		    for(int i = 0; i < A.rows(); i++){
+		    	answer[i]+= beta * y.get(i);
+		    }
+		      
+		      for(int m = 0; m < x.length; m++)
+		      {
+		        x.set(m,answer[m]);
+		      }
+		
 			   }
 	
 	/**
@@ -434,44 +432,56 @@ public class FastBLAS implements Blas
 	 * @param x the vector holding source and destination.
 	 */
 	@Override public void dtrmv(boolean isUpperTriangular, boolean transposeA, boolean isUnitTriangular, DoubleMatrix2D A, DoubleMatrix1D x){
-        	if(isUpperTriangular){
-    			double answer[] = new double[x.length];
-    			
-    			
-    			
-    			for( int i = 0; i < x.length; i++)
-    			{
-    				answer[i] = 0;
-    				double temp[] = A.extractRow(i);
-    				for(int j = i; j < x.length; j++)
-    				{
-    					answer[j] += temp[j]*x.get(j);
-    				}
-    				for(int k = 0; k < x.length; k++){
-    					x.set(k, answer[k]);
-    				}
-    			}
-    		}
-    		else{
-    			double answer[] = new double[x.length];
-    			int j = 0;
-    			for( int i = 0; i < x.length; i++)
-    			{
-    				answer[i] = 0;
-    				double temp[] = A.extractRow(i);
-    				j = 0;
-    				do
-    				{
-    					answer[j] += temp[j]*x.get(j);
-    				}
-    				while(j != i);
-    		}
-    			for(int k = 0; k < x.length; k++){
-    				x.set(k, answer[k]);
-    			}
-    		}
-    	
-        }
+		if(transposeA){
+			A = MathUtils.transpose(A);
+		}
+		if(isUpperTriangular){
+		    double answer[] = new double[x.length];
+		      for(int i = 0; i < x.length; i++)
+		      {
+		    	  answer[i] = 0;
+		      }
+		    double temp[] = A.data();
+
+		    for( int i = 0; i < A.rows(); i++)
+		    {
+		      for( int j = i; j < A.cols(); j++ )
+		      {
+		    	  answer[j] += (temp[i*A.cols() + j]* x.get(j));
+		      }
+		    }
+		      
+		      for(int m = 0; m < x.length; m++)
+		      {
+		        x.set(m,answer[m]);
+		      }
+		}
+		else{
+			 double answer[] = new double[x.length];
+		      for(int i = 0; i < x.length; i++)
+		      {
+		    	  answer[i] = 0;
+		      }
+		    double temp[] = A.data();
+		    for(int i = 0; i < A.rows(); i++)
+		    {
+		      int j = 0;
+		      do
+		      {
+		    	  answer[j] += (temp[i*A.cols() + j]* x.get(j));
+		    	  j++;
+		      }
+		      while(j<i);     
+		    }
+		
+		      
+		      for(int m = 0; m < x.length; m++)
+		      {
+		        x.set(m,answer[m]);
+		      }
+		}
+	}
+      
 	
 	/**
 	 * Returns the index of largest absolute value; <tt>i such that |x[i]| == max(|x[0]|,|x[1]|,...).</tt>.
